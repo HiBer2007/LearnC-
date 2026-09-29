@@ -32,43 +32,21 @@
 <details open>
 <summary><b>说明：STL 是什么</b>（C 语言中不存在这一概念）</summary>
 
-**STL = Standard Template Library（标准模板库）**，是 **C++** 标准库的一部分。
-其含义为：**由他人预先编写并经充分验证的通用数据结构和算法，可直接使用。**
+**STL = Standard Template Library（标准模板库）**，
+是 **C++ 标准库的一部分**，提供现成的数据结构与算法。
 
-| 部件 | 是什么 | 本示例中的例子 |
+| 部件 | 作用 | 本示例中的例子 |
 |---|---|---|
-| **容器** | 现成的数据结构 | `std::vector<Student>`（动态数组）、`std::string`（字符串） |
-| **迭代器** | 遍历容器的“通用指针” | `list.begin()` / `list.end()` |
-| **算法** | 现成的算法 | `std::sort(...)`（排序） |
-| **lambda** | 告诉算法“如何比较” | `[](const Student &a, const Student &b) { return a.score() > b.score(); }` |
+| 容器 | 现成的数据结构 | `std::vector<Student>`、`std::string` |
+| 迭代器 | 遍历容器的通用指针 | `list.begin()` / `list.end()` |
+| 算法 | 现成的算法 | `std::sort(...)` |
 
-**“模板”（template）是其中的关键词**：容器与算法均以**泛型**方式编写，一套代码可适配任意类型。
+**C 语言中没有 STL。** C 需要自行 `malloc` / `free` 并另外记录长度。
 
-```cpp
-std::vector<int>     vi;   // 装 int
-std::vector<Student> vs;   // 装 Student —— 同一个 vector，只是模板参数不同
-```
+> **完整讲解见语法篇**，见【待补：01-编译器/05-语法.md】。
+> 该篇将说明模板、容器、迭代器与算法的用法与实现原理。
 
-**与 C 语言对比：**
-
-```c
-/* C：动态数组需要自行管理 */
-int *arr = malloc(n * sizeof(int));
-/* ...扩容、记录长度、释放均须手工处理 */
-free(arr);
-```
-
-```cpp
-// C++：由 vector 自动管理
-std::vector<int> arr(n);
-arr.push_back(42);        // 自动扩容
-std::cout << arr.size();  // 自带长度
-// 无需 free，离开作用域时自动释放
-```
-
-> **注意**：**C 语言中没有 STL。** 上述内容在 C 语言中**一个都不存在**。
-> C 需要自行 `malloc` / `free`，这部分基础对应课程《指针、数组、初始化》。
-> STL 是 **C++** 独有的内容。
+</details>
 
 **`launch.json` 中那几条 `setupCommands` 的作用**
 

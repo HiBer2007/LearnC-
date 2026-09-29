@@ -33,10 +33,9 @@
 
 ## 演示内容
 
-> **说明**：如需了解 STL 的含义，可先阅读
-> [`B-examples\02-cpp-single-file\README.md`](../02-cpp-single-file/README.md) 中的
-> 「STL 是什么」一节。简要而言，`std::vector` / `std::string` / `std::sort`
-> 这些**现成的数据结构和算法**即属于 STL，**C 语言中没有**。
+> **说明**：`std::vector` / `std::string` / `std::sort` 这些
+> **现成的数据结构和算法**属于 STL，是 C++ 标准库的一部分，**C 语言中没有**。
+> 完整讲解见语法篇，见【待补：01-编译器/05-语法.md】。
 
 ```
 src/main.cpp     ← 主程序
