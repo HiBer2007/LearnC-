@@ -48,7 +48,7 @@
                 "panel": "shared",
                 "clear": true
             },
-            "detail": "用 MinGW 的 g++ 编译当前 .cpp 文件，生成带 DWARF 调试信息的 exe。\n-finput-charset=UTF-8 -fexec-charset=GBK：源码按 UTF-8 读取，字符串常量按 GBK 写入 exe，以匹配中文 Windows 的 CP936 控制台，避免中文输出乱码。详见《配置指南-从零开始.md》第 9 章。"
+            "detail": "用 MinGW 的 g++ 编译当前 .cpp 文件，生成带 DWARF 调试信息的 exe。\n-finput-charset=UTF-8 -fexec-charset=GBK：源码按 UTF-8 读取，字符串常量按 GBK 写入 exe，以匹配中文 Windows 的 CP936 控制台，避免中文输出乱码。详见《01-编译器/02-环境配置.md》第 9 章。"
         },
         {
             "label": "构建: 单文件 (MSVC cl)",

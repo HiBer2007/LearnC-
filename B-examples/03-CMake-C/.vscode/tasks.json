@@ -17,7 +17,7 @@
       "command": "cmake",
       "args": ["--preset", "mingw-gdb"],
       // 直接调用 PATH 中的 cmake，不写死安装路径。
-      // 若提示找不到 cmake，请先把它加入 PATH（见《配置指南-从零开始.md》第 3 章）。
+      // 若提示找不到 cmake，请先把它加入 PATH（见《01-编译器/02-环境配置.md》第 3 章）。
       "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": [],
       "presentation": {

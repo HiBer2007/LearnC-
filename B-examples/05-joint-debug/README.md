@@ -168,7 +168,7 @@ Windows 版 GDB 的编译参数是：
 本工程位于含中文的路径下，但**服务端调试不受影响**——Linux 侧的 GDB 原生使用 UTF-8。
 
 受影响的只有 Windows 侧：`client.c` 的编译输出路径使用了反斜杠
-（`${workspaceFolder}\build\client.exe`），原因见《配置指南》第 9 章第 5 节。
+（`${workspaceFolder}\build\client.exe`），原因见《01-编译器/02-环境配置.md》第 9 章第 5 节。
 
 ### 关于 client.c 的编译选项
 
