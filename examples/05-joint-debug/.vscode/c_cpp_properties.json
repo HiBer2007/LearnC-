@@ -1,0 +1,39 @@
+{
+  // ===================================================================
+  //  示例 05 · 联合调试 —— 智能感知配置
+  //
+  //  本工程同时含有 Windows 侧与 Linux 侧的代码，而 cpptools 的智能感知
+  //  一次只能按一套头文件解析。因此这里做了取舍：
+  //
+  //    client.c   在 Windows 上编译 → 本文件按 MinGW 配置，补全正常
+  //    server.c   在 Linux 上编译   → 本窗口内补全不完整（找不到 unistd.h 等）
+  //
+  //  若需要 server.c 也有完整补全，用「Remote - WSL」方式另开一个窗口
+  //  打开本目录，那里会按 Linux 头文件解析。详见 README。
+  //
+  //  这个文件不影响编译与调试，只影响编辑体验。
+  // ===================================================================
+  "version": 4,
+  "configurations": [
+    {
+      "name": "Windows 侧 (MinGW)",
+      // 不写死 compilerPath，cpptools 会自动探测本机的 gcc。
+      // 若探测失败，可填入本机 gcc.exe 的完整路径。
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-gcc-x64",
+      "includePath": [
+        "${workspaceFolder}/**"
+      ],
+      "defines": [
+        "_WIN32"
+      ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      }
+    }
+  ]
+}

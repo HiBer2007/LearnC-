@@ -1,0 +1,31 @@
+{
+  // ===================================================================
+  //  示例 03 · CMake 工程（C）—— 编辑器设置
+  // ===================================================================
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": true,
+  "files.associations": {
+    "*.h": "c"
+  },
+
+  // ---------- 智能感知 ----------
+    "C_Cpp.default.intelliSenseMode": "windows-gcc-x64",
+  "C_Cpp.default.cStandard": "c17",
+  // CMake 配置后会生成这个文件，cpptools 优先用它拿精确编译参数
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/mingw/compile_commands.json",
+
+  "C_Cpp.debugShortcut": true,
+
+  // ---------- CMake Tools 扩展 ----------
+  // 有 CMakePresets.json 时优先用预设
+  "cmake.useCMakePresets": "auto",
+  // 写成绝对路径，刚装完 CMake 没重启 VS Code 时也能用
+  "cmake.cmakePath": "cmake",
+  // 打开工程时不自动配置，避免一打开就弹报错
+  "cmake.configureOnOpen": false,
+  // 构建交给 launch.json 的 preLaunchTask，这里不要重复触发
+  "cmake.buildBeforeRun": false,
+  "cmake.exportCompileCommandsFile": true,
+
+  "debug.onTaskErrors": "showErrors"
+}

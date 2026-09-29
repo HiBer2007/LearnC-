@@ -1,0 +1,113 @@
+{
+  // ===================================================================
+  //  示例 01 · C 单文件 —— 构建任务
+  //  F5 时会自动跑对应的 preLaunchTask，一般不用手动执行。
+  //  想手动跑：Ctrl+Shift+P → Tasks: Run Task
+  // ===================================================================
+  "version": "2.0.0",
+  "tasks": [
+    // ---------------------------------------------------------------
+    //  准备：建输出目录
+    //  gcc 不会自己建目录，缺了会报
+    //  "ld.exe: cannot open output file ...: No such file or directory"
+    //
+    //  这里用 PowerShell 的 .NET 方法建目录，原因：
+    //    1. 不依赖 cmake —— 只做单文件调试的人不必安装 CMake
+    //    2. 幂等 —— 目录已存在时同样成功
+    //    3. 参数是单个字符串，不涉及引号转义问题
+    //
+    //  不要写成 cmd /c "if not exist ... mkdir ..."：
+    //     VS Code 的 process 任务按 MSVCRT 规则给参数加引号（内部 " 转义成 \"），
+    //     cmd.exe 不认 \" 转义，会报
+    //       "The filename, directory name, or volume label syntax is incorrect."
+    //     任务直接失败。
+    // ---------------------------------------------------------------
+    {
+      "label": "准备: 创建输出目录",
+      "type": "process",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-NonInteractive",
+        "-Command",
+        "[System.IO.Directory]::CreateDirectory('${workspaceFolder}\\build\\gcc') | Out-Null"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "close": true
+      }
+    },
+
+    // ---------------------------------------------------------------
+    //  GDB 路线：gcc 编译，产出 DWARF 调试信息
+    //  -g 是关键，没有它调试器打开是一片空白
+    //
+    //  -finput-charset=UTF-8  源码按 UTF-8 读取
+    //  -fexec-charset=GBK     字符串常量按 GBK 写入 exe，
+    //                         以匹配中文 Windows 的 CP936 控制台。
+    //                         不加这两项时，gcc 默认把字符串写成 UTF-8，
+    //                         中文控制台按 GBK 解读，会显示成乱码。
+    // ---------------------------------------------------------------
+    {
+      "label": "构建: C 单文件 (gcc + GDB)",
+      "type": "process",
+      "command": "gcc",
+      "args": [
+        "-std=gnu17",
+        "-g",
+        "-O0",
+        "-Wall",
+        "-Wextra",
+        "-finput-charset=UTF-8",
+        "-fexec-charset=GBK",
+        "${file}",
+        "-o",
+        "${workspaceFolder}\\build\\gcc\\${fileBasenameNoExtension}.exe"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "dependsOn": ["准备: 创建输出目录"],
+      "problemMatcher": "$gcc",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "用 MinGW 的 gcc 编译当前打开的 .c 文件，生成带 DWARF 调试信息的 exe"
+    },
+
+    // ---------------------------------------------------------------
+    //  VS2022 路线：cl.exe 编译，产出 PDB
+    //  编译逻辑放在 tools/build-msvc.ps1 里（要加载 vcvars 环境）
+    // ---------------------------------------------------------------
+    {
+      "label": "构建: 单文件 (MSVC cl)",
+      "type": "process",
+      "command": "pwsh",
+      "args": [
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\.vscode\\tools\\build-msvc.ps1",
+        "-Source",
+        "${file}",
+        "-Output",
+        "${workspaceFolder}\\build\\msvc\\${fileBasenameNoExtension}.exe"
+      ],
+      "options": {
+        "cwd": "${fileDirname}"
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      },
+      "detail": "用 Visual Studio 的 cl.exe 编译当前 .c 文件，生成带 PDB 的 exe"
+    }
+  ]
+}

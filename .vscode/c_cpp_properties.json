@@ -1,0 +1,56 @@
+{
+  // ===================================================================
+  //  智能感知配置（补全 / 跳转 / 报错波浪线）
+  //
+  //  注意：这个文件不影响编译和调试，只影响编辑体验。
+  //    写错了调试照样能跑。
+  //
+  //  切换用哪套：Ctrl+Shift+P → C/C++: Select IntelliSense Configuration
+  // ===================================================================
+  "version": 4,
+  "configurations": [
+    // ---------------- MinGW GCC（默认）----------------
+    {
+      "name": "MinGW-GCC-x64",
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-gcc-x64",
+      "includePath": [
+        "${workspaceFolder}/**"
+      ],
+      "defines": [],
+      "browse": {
+        "path": [
+          "${workspaceFolder}"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      }
+    },
+
+    // ---------------- MSVC (VS2022) ----------------
+    {
+      "name": "MSVC-x64",
+      // 未指定 compilerPath 时，cpptools 会自动探测本机的 MSVC。
+      // 若探测失败，可手工填入本机 cl.exe 的完整路径。该路径含 MSVC 工具集
+      // 版本号，形如：
+      //   <Visual Studio 安装目录>\VC\Tools\MSVC\<版本号>\bin\Hostx64\x64\cl.exe
+      "cStandard": "c17",
+      "cppStandard": "c++17",
+      "intelliSenseMode": "windows-msvc-x64",
+      "includePath": [
+        "${workspaceFolder}/**"
+      ],
+      "defines": [
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "browse": {
+        "path": [
+          "${workspaceFolder}"
+        ],
+        "limitSymbolsToIncludedHeaders": true
+      }
+    }
+  ]
+}

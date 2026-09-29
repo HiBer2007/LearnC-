@@ -1,0 +1,75 @@
+{
+  // ===================================================================
+  //  示例 01 · C 单文件 —— 调试配置
+  //  打开本文件夹后按 F5，会弹出下面这个列表。
+  //
+  //  ── 关于「GDB ·」开头的配置（重要） ──
+  //    所在路径含中文时，GDB 无法启动调试，且无法通过配置项解决：
+  //      GDB 经 MI 协议接收文件名时期望 ANSI 代码页(936)字节，
+  //      而 VS Code 发送 UTF-8 字节，两者不一致，GDB 打不开可执行文件。
+  //
+  //    表现：提示 "Program path ... is missing or invalid"（但文件确实存在），
+  //          或弹出空的「选择要终止的调试会话」列表后无反应。
+  //
+  //    工程所在路径含中文时（本工作区即是如此），「GDB ·」配置【不可用】，
+  //    请使用「VS2022 ·」配置（或用 CodeLLDB）。
+  //    把工程移到全英文路径后，GDB 配置即可恢复正常。
+  //
+  //    详见《配置指南-从零开始.md》第 1 章第 2 节、第 9 章第 13 节。
+  // ===================================================================
+  "version": "0.2.0",
+  "configurations": [
+    // ---------------------------------------------------------------
+    //  GDB 路线（MinGW gcc）
+    // ---------------------------------------------------------------
+    {
+      "name": "GDB · 调试当前 .c 文件",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/gcc/${fileBasenameNoExtension}.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      // false = 用 VS Code 的集成终端，scanf 之类可以正常输入
+      "externalConsole": false,
+      "MIMode": "gdb",
+      // 你的 gdb.exe 路径（装了 MinGW 就有）
+      "preLaunchTask": "构建: C 单文件 (gcc + GDB)",
+      "setupCommands": [
+        {
+          "description": "为 gdb 启用整齐打印",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "关闭分页，避免卡在 --More--",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        }
+      ],
+      "logging": {
+        "moduleLoad": false,
+        "programOutput": true
+      }
+    },
+
+    // ---------------------------------------------------------------
+    //  VS2022 调试器路线（MSVC cl）
+    //  注意 type 是 cppvsdbg，不是 cppdbg
+    // ---------------------------------------------------------------
+    {
+      "name": "VS2022 · 调试当前 .c 文件",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/msvc/${fileBasenameNoExtension}.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      // cppvsdbg 用 console 而不是 externalConsole
+      "console": "integratedTerminal",
+      "preLaunchTask": "构建: 单文件 (MSVC cl)"
+    }
+  ]
+}

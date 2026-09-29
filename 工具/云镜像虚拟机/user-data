@@ -1,0 +1,59 @@
+#cloud-config
+# ============================================================================
+#  Ubuntu-Debug 虚拟机的首次启动配置
+#
+#  该文件随 seed.iso 一起挂载给虚拟机，由 cloud-init 在首次启动时读取，
+#  自动完成用户创建、密码设置、SSH 授权等初始化工作。
+#
+#  这样就不需要运行安装程序，也就避免了安装器崩溃的问题。
+# ============================================================================
+
+hostname: ubuntu-debug
+manage_etc_hosts: true
+
+# ---------------------------------------------------------------- 用户
+users:
+  - name: ubuntu-debug
+    gecos: ubuntu-debug
+    groups: [adm, sudo, dialout]
+    shell: /bin/bash
+    # 允许密码登录（仅用于本地测试环境）
+    lock_passwd: false
+    plain_text_passwd: ubuntu-debug
+    sudo: "ALL=(ALL) NOPASSWD:ALL"
+    ssh_authorized_keys:
+      - __SSH_PUBKEY__
+
+# ---------------------------------------------------------------- SSH
+ssh_pwauth: true
+disable_root: true
+
+# ---------------------------------------------------------------- 密码
+chpasswd:
+  expire: false
+  list: |
+    ubuntu-debug:ubuntu-debug
+
+# ---------------------------------------------------------------- 磁盘
+# 首次启动时把根分区扩展到整块磁盘
+growpart:
+  mode: auto
+  devices: ['/']
+resize_rootfs: true
+
+# ---------------------------------------------------------------- 软件包
+# 不在这里装软件：本机访问官方源很慢，装了会拖长首次启动时间。
+# 装机完成后由外部脚本通过 SSH 安装，可以换用国内镜像。
+package_update: false
+package_upgrade: false
+
+# ---------------------------------------------------------------- 其他
+locale: en_US.UTF-8
+timezone: Asia/Shanghai
+
+# 关闭 cloud-init 自身的首次启动优化（避免占用启动时间）
+runcmd:
+  - [ sh, -c, 'systemctl enable ssh || true' ]
+  - [ sh, -c, 'echo "cloud-init setup done" > /var/log/ubuntu-debug-ready.log' ]
+
+final_message: "Ubuntu-Debug 初始化完成，用时 $UPTIME 秒"

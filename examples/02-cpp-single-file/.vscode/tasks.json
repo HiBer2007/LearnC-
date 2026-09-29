@@ -1,0 +1,80 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            // 用 PowerShell 的 .NET 方法建目录：不依赖 cmake，且幂等。
+            // 不要写成 cmd /c "if not exist ... mkdir ..."，参数转义会导致任务失败。
+            "label": "准备: 创建输出目录",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-NonInteractive",
+                "-Command",
+                "[System.IO.Directory]::CreateDirectory('${workspaceFolder}\\build\\gcc') | Out-Null"
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "close": true
+            }
+        },
+        {
+            "label": "构建: C++ 单文件 (g++ + GDB)",
+            "type": "process",
+            "command": "g++",
+            "args": [
+                "-std=gnu++17",
+                "-g",
+                "-O0",
+                "-Wall",
+                "-Wextra",
+                "-finput-charset=UTF-8",
+                "-fexec-charset=GBK",
+                "${file}",
+                "-o",
+                "${workspaceFolder}\\build\\gcc\\${fileBasenameNoExtension}.exe"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "dependsOn": [
+                "准备: 创建输出目录"
+            ],
+            "problemMatcher": "$gcc",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            },
+            "detail": "用 MinGW 的 g++ 编译当前 .cpp 文件，生成带 DWARF 调试信息的 exe。\n-finput-charset=UTF-8 -fexec-charset=GBK：源码按 UTF-8 读取，字符串常量按 GBK 写入 exe，以匹配中文 Windows 的 CP936 控制台，避免中文输出乱码。详见《配置指南-从零开始.md》第 9 章。"
+        },
+        {
+            "label": "构建: 单文件 (MSVC cl)",
+            "type": "process",
+            "command": "pwsh",
+            "args": [
+                "-NoProfile",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "${workspaceFolder}\\.vscode\\tools\\build-msvc.ps1",
+                "-Source",
+                "${file}",
+                "-Output",
+                "${workspaceFolder}\\build\\msvc\\${fileBasenameNoExtension}.exe"
+            ],
+            "options": {
+                "cwd": "${fileDirname}"
+            },
+            "problemMatcher": "$msCompile",
+            "presentation": {
+                "reveal": "silent",
+                "panel": "shared",
+                "clear": true
+            },
+            "detail": "用 Visual Studio 的 cl.exe 编译当前 .cpp 文件，生成带 PDB 的 exe"
+        }
+    ]
+}

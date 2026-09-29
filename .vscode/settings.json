@@ -1,0 +1,33 @@
+{
+  // ===================================================================
+  //  工作区级设置
+  //
+  //  这里只管「在工作区任意位置随手写个单文件」的场景。
+  //  各examples自带 .vscode/settings.json，单独打开时以那边为准。
+  // ===================================================================
+
+  // ---------- 文件与编码 ----------
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": true,
+  "files.associations": {
+    "*.h": "c",
+    "*.hpp": "cpp"
+  },
+
+  // ---------- 智能感知（补全 / 跳转 / 波浪线）----------
+  // 默认按 MinGW GCC 解析。写 C++ 时可以用命令面板切到别的配置：
+  //   Ctrl+Shift+P → C/C++: Select IntelliSense Configuration
+    "C_Cpp.default.intelliSenseMode": "windows-gcc-x64",
+  "C_Cpp.default.cStandard": "c17",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.errorSquiggles": "enabled",
+  // 编辑器右上角显示「运行 / 调试」小按钮
+  "C_Cpp.debugShortcut": true,
+  // 刻意不设 C_Cpp.default.configurationProvider：
+  // 设成 cmake-tools 会让智能感知依赖 CMake Tools 的配置状态，
+  // 对以单文件为主的场景反而容易失效。保持 c_cpp_properties.json 说了算更可预测。
+
+  // ---------- 调试体验 ----------
+  // 构建失败时不要启动调试，避免调到上一次留下的旧 exe
+  "debug.onTaskErrors": "showErrors"
+}

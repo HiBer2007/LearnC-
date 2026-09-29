@@ -1,0 +1,135 @@
+{
+  // ===================================================================
+  //  工作区级调试配置 —— 只管「单文件」
+  //
+  //  这里的作用：你在【本工作区任意位置】打开一个 .c / .cpp 文件，
+  //    按 F5 就能编译并调试它，不用为每个文件建工程。
+  //
+  //  CMake 工程不在这里调。examples各自自带 .vscode，
+  //    请用「文件 → 打开文件夹」单独打开它们（原因见下）。
+  //
+  //  ── 为什么 CMake 示例要单独打开？ ──
+  //    VS Code 只认【工作区根目录】的 .vscode。像
+  //    examples\03-CMake-C\src\main.c 这种文件，在上层工作区打开时，
+  //    用的是【上层】的配置（也就是本文件）——它会把这个 .c 当单文件编译，
+  //    而它调用了同工程别的 .c，于是链接失败：
+  //        undefined reference to `add'
+  //    这不是配置坏了，是打开方式不对。
+  //
+  //  ── 关于「GDB ·」开头的配置（重要） ──
+  //    工程所在路径中含中文时（本工作区即是如此）。
+  //    GDB 在 Windows 上经 MI 协议接收文件名时期望 ANSI 代码页(936)字节，
+  //    而 VS Code 发送的是 UTF-8 字节，两者不一致，GDB 打不开可执行文件，
+  //    调试完全无法启动，且无法通过任何配置项解决。
+  //
+  //    表现：提示 "Program path ... is missing or invalid"（但文件确实存在），
+  //          或弹出空的「选择要终止的调试会话」列表后无反应。
+  //
+  //    因此本文件中「GDB ·」开头的两个配置在当前位置【不可用】，
+  //    请使用「VS2022 ·」开头的配置。下面仍予保留：
+  //    把工作区移到全英文路径后，它们即可正常使用。
+  //
+  //    详见《配置指南-从零开始.md》第 1 章第 2 节、第 9 章第 13 节。
+  // ===================================================================
+  "version": "0.2.0",
+  "configurations": [
+    // ===============================================================
+    //  C 单文件 · GDB
+    // ===============================================================
+    {
+      "name": "GDB · C 单文件 (gcc)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/single/gcc/${fileBasenameNoExtension}.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "构建: C 单文件 (gcc + GDB)",
+      "setupCommands": [
+        {
+          "description": "为 gdb 启用整齐打印",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "关闭分页，避免卡在 --More--",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        }
+      ],
+      "logging": {
+        "moduleLoad": false,
+        "programOutput": true
+      }
+    },
+
+    // ===============================================================
+    //  C++ 单文件 · GDB
+    //  和上一条唯一的区别：编译器用 g++
+    //  （gcc 编译 .cpp 不会链接 libstdc++，会报 undefined reference）
+    // ===============================================================
+    {
+      "name": "GDB · C++ 单文件 (g++)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/single/gcc/${fileBasenameNoExtension}.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "构建: C++ 单文件 (g++ + GDB)",
+      "setupCommands": [
+        {
+          // 让 vector / string 显示成内容而不是内部指针的关键
+          // MinGW 版 GDB 常常没把 libstdc++ 的 pretty-printer 放进默认搜索路径，
+          // 只写 -enable-pretty-printing 是【没有用的】——那只是"允许使用"，
+          // 而这里根本没有 printer 可用。
+          "description": "把 libstdc++ 的 pretty-printer 脚本目录加进 GDB 的 Python 路径",
+          "text": "python import sys, glob, os, gdb; sys.path += glob.glob(os.path.join(os.path.dirname(os.path.dirname(gdb.PYTHONDIR)), 'gcc-*', 'python'))",
+          "ignoreFailures": true
+        },
+        {
+          "description": "注册 libstdc++ pretty-printer（真正让它生效的一步）",
+          "text": "python import libstdcxx.v6",
+          "ignoreFailures": true
+        },
+        {
+          "description": "为 MI 输出启用整齐打印（VS Code 走的就是 MI 协议）",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "关闭分页，避免卡在 --More--",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        }
+      ],
+      "logging": {
+        "moduleLoad": false,
+        "programOutput": true
+      }
+    },
+
+    // ===============================================================
+    //  单文件 · VS2022 调试器
+    //  cl.exe 按扩展名自动判断 C 还是 C++，所以 C 和 C++ 共用一条
+    // ===============================================================
+    {
+      "name": "VS2022 · 单文件 (cl · C 与 C++)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/single/msvc/${fileBasenameNoExtension}.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${fileDirname}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "构建: 单文件 (MSVC cl)"
+    }
+  ]
+}
