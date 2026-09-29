@@ -5,12 +5,12 @@
   //  这里的作用：你在【本工作区任意位置】打开一个 .c / .cpp 文件，
   //    按 F5 就能编译并调试它，不用为每个文件建工程。
   //
-  //  CMake 工程不在这里调。examples各自自带 .vscode，
+  //  CMake 工程不在这里调。B-examples各自自带 .vscode，
   //    请用「文件 → 打开文件夹」单独打开它们（原因见下）。
   //
   //  ── 为什么 CMake 示例要单独打开？ ──
   //    VS Code 只认【工作区根目录】的 .vscode。像
-  //    examples\03-CMake-C\src\main.c 这种文件，在上层工作区打开时，
+  //    B-examples\03-CMake-C\src\main.c 这种文件，在上层工作区打开时，
   //    用的是【上层】的配置（也就是本文件）——它会把这个 .c 当单文件编译，
   //    而它调用了同工程别的 .c，于是链接失败：
   //        undefined reference to `add'
