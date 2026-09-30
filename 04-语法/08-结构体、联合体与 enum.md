@@ -275,6 +275,23 @@ A 各成员偏移: c=0 i=4 d=8
 
 # 第 2 节 联合体
 
+**联合体要解决的问题是：同一块内存，常常需要被当成不同的东西来看。**
+
+**C 诞生的年代，内存以 KB 计。** 一个 16 位寄存器既可能是一个整数，
+也可能是两个字符、四个标志位、半条指令。
+**每种解释都单独存一份，内存立刻翻几倍。**
+`union` 让「同一块存储的多种解释」这件事**能被明确写出来**，
+而不是靠指针强转去蒙。
+
+**它还有第二个身份：C 里表达「几种可能之一」的手段。**
+一条消息可能是登录，也可能是心跳，两者不会同时出现；
+把两者叠在同一块内存上，再配一个标签说明当前是哪一种
+（见第 2.2 小节的「带标签的联合体」）。
+
+> [!IMPORTANT]
+> **`union` 的语义是「同一块存储的多种视图」，省空间只是它的结果。**
+> 把它当成省空间的小技巧就会用错——**它的重点是「重叠」这件事本身**。
+
 ## 2.1 成员共享同一块内存
 
 **`union` 与 `struct` 只差一件事：成员的起始偏移。**
@@ -493,10 +510,69 @@ int main(void) {
 
 # 第 3 节 `enum`
 
-## 3.1 它是什么
+## 3.1 它解决什么问题
 
-**给一组整数起名字。**
+**没有 `enum` 的时候，一组相关的常量只能这样写**：
 
+`C`
+
+```c
+/* define_color.c    编译：gcc -std=c23 define_color.c -o define_color */
+#include <stdio.h>
+
+#define RED   0
+#define GREEN 1
+#define BLUE  2
+
+int main(void) {
+    int c = GREEN;
+    printf("c = %d\n", c);      /* 只有数字，没有名字 */
+    return 0;
+}
+```
+
+**或者干脆直接写数字。这样写有三个问题**：
+
+| 问题 | 说明 |
+|---|---|
+| 常量之间没有联系 | 编译器不知道 `RED` 与 `GREEN` 属于同一组 |
+| 类型上看不出意图 | `void set_color(int c)` 里那个 `int` 什么都能接 |
+| 调试信息里没有名字 | 断点停下时只看到 `1`，看不到 `GREEN` |
+
+**第三件事可以直接查**——把两种写法都加 `-g` 编译，再看调试信息：
+
+`实测数据`
+`Bash`
+
+```bash
+gcc -std=c23 -g enum_dwarf.c   -o enum_dwarf.exe
+gcc -std=c23 -g define_dwarf.c -o define_dwarf.exe
+objdump --dwarf=info enum_dwarf.exe   | grep -E ":( +)(RED|GREEN|BLUE|Color)$"
+objdump --dwarf=info define_dwarf.exe | grep -E ":( +)(RED|GREEN|BLUE|Color)$"
+```
+
+`实测数据`
+`Text`
+
+```text
+enum 版：
+    DW_AT_name        : Color
+    DW_AT_name        : RED
+    DW_AT_name        : GREEN
+    DW_AT_name        : BLUE
+
+#define 版：
+    （一个都没有）
+```
+
+**`#define` 在预处理阶段就被替换掉了，名字根本进不了目标文件**；
+`enum` 会生成一个真正的**类型**，成员名与取值一起写进调试信息
+（源码见附录 A.8）。
+
+**这就是 `enum` 的意图**：给一组相关常量一个**共同的名字**，
+让它们成为一个**类型**，并且**把名字保留到调试信息里**。
+
+`实测数据`
 `C`
 
 ```c
@@ -514,6 +590,24 @@ int main(void) {
 ```
 
 **输出**：`RED=0 GREEN=1 BLUE=2` 与 `c = 1`
+
+**它做到了什么、没做到什么，要看清楚**：
+
+| | 做到了 | 没做到 |
+|---|---|---|
+| 名字 | 一组常量有了共同的名字 `enum Color` | —— |
+| 类型 | 可以写 `enum Color c`，函数签名里看得出要什么 | C 里挡不住 `int` 混进来 |
+| 调试 | 调试信息里保留 `RED`、`GREEN`、`BLUE` | —— |
+| 取值 | —— | **不检查**：C 里 `enum Color c = 5;` 合法 |
+
+**「不检查取值」不是疏忽，而是 C 的取向**：
+`enum` 属于**整型家族**，底层就是一个整数类型（具体用哪个由实现选），
+因此可以自由地与 `int` 互转。
+**C++ 保留了这个取向**（只关掉了 `int` → `enum` 的隐式转换，见第 3.2 小节），
+**要真正的独立类型得用 `enum class`**（第 3.3 小节）。
+
+**另一件常被忽略的事**：`enum` 的成员是**编译期常量**，
+因此能当数组长度、能当 `case` 标签（见《04-语法/05-控制流语句.md》第 2 节）。
 
 **可以指定值**：
 
@@ -594,29 +688,221 @@ int main() {
 
 # 第 4 节 位域
 
-**在结构体里按「位」分配空间。**
+**位域要解决的问题是：硬件寄存器与协议字段是按「位」划分的，不是按字节。**
+
+**一份典型的寄存器手册会这样写**：
+
+| 位 | 名字 | 含义 |
+|---|---|---|
+| 31 | `EN` | 使能 |
+| 30 | `IRQ` | 中断允许 |
+| 29–16 | `MODE` | 模式 |
+| 15–0 | `ADDR` | 地址 |
+
+**没有位域时，只能手工移位与掩码**：
 
 `C`
 
 ```c
-/* bitfield.c    编译：gcc -std=c23 bitfield.c -o bitfield */
+/* manual_bits.c    编译：gcc -std=c23 manual_bits.c -o manual_bits */
+#include <stdint.h>
 #include <stdio.h>
 
-struct Flags {
-    unsigned int a : 1;         /* 占 1 位 */
-    unsigned int b : 3;         /* 占 3 位 */
-    unsigned int c : 4;         /* 占 4 位 */
-};
+void set_mode(uint32_t *ctrl, uint32_t mode) {
+    *ctrl = (*ctrl & ~(0x3FFFu << 16)) | ((mode & 0x3FFFu) << 16);
+}
 
 int main(void) {
-    printf("sizeof(struct Flags) = %zu\n", sizeof(struct Flags));
-    struct Flags f = { 1, 5, 9 };
-    printf("a=%u b=%u c=%u\n", f.a, f.b, f.c);
-    f.b = 9;                    /* 3 位装不下 9 */
-    printf("b 赋值 9 之后 = %u\n", f.b);
+    uint32_t ctrl = 0;
+    set_mode(&ctrl, 3);
+    printf("ctrl = 0x%08X\n", ctrl);     /* 0x00030000 */
     return 0;
 }
 ```
+
+**每改一个字段，都要算一次移位量、对一次掩码**，
+**而手册上写的只是「第 29~16 位是 `MODE`」——两边对不上，就容易写错。**
+
+**位域让布局可以照着手册写出来**：
+
+`实测数据`
+`C`
+
+```c
+/* ctrl_reg.c    编译：gcc -std=c23 ctrl_reg.c -o ctrl_reg */
+#include <stdio.h>
+#include <string.h>
+
+struct Ctrl {
+    unsigned int addr : 16;         /* 15..0  */
+    unsigned int mode : 14;         /* 29..16 */
+    unsigned int irq  : 1;          /* 30     */
+    unsigned int en   : 1;          /* 31     */
+};
+
+int main(void) {
+    struct Ctrl c;
+    memset(&c, 0, sizeof c);
+    c.en = 1;
+    c.mode = 3;
+    c.addr = 0x1234;
+
+    unsigned char raw[4];
+    memcpy(raw, &c, sizeof c);
+    printf("sizeof = %zu\n", sizeof c);
+    printf("高字节在前: %02X %02X %02X %02X\n", raw[3], raw[2], raw[1], raw[0]);
+    return 0;
+}
+```
+
+`实测数据`
+`Text`
+
+```text
+sizeof = 4
+高字节在前: 80 03 12 34
+```
+
+**`80 03 12 34` 与手册逐位对上了**：最高位是 `EN`，接着 `IRQ`，
+然后 `MODE`，最后是 `ADDR`——**代码里写 `c.en = 1;`，就是手册上「第 31 位置 1」。**
+
+> [!IMPORTANT]
+> **位域的意图是：把「按位划分」从手工计算变成声明。**
+> 布局写在结构体里，读代码的人不必再反推移位量与掩码。
+
+**成员按声明顺序从低位往高位排**（本机实测）：
+
+`实测数据`
+`C`
+
+```c
+/* bitfield_bits.c    编译：gcc -std=c23 bitfield_bits.c -o bitfield_bits
+ * 完整程序（含 S1、S2 的对照）见附录 A.9。
+ */
+#include <stdio.h>
+#include <string.h>
+
+struct Flags { unsigned int a:1, b:3, c:4; };   /* 共 8 位 */
+
+static void show(const char *what, struct Flags f) {
+    unsigned char raw[4];
+    memcpy(raw, &f, sizeof f);
+    printf("%-10s -> %02X %02X %02X %02X\n", what, raw[0], raw[1], raw[2], raw[3]);
+}
+
+int main(void) {
+    struct Flags f = {0};       /* 先清零，剩下的位才是确定的 */
+    f.a = 1;            show("a = 1", f);
+    f.a = 0; f.b = 7;   show("b = 7", f);
+    f.b = 0; f.c = 15;  show("c = 15", f);
+    return 0;
+}
+```
+
+`实测数据`
+`Text`
+
+```text
+a = 1      -> 01 00 00 00      a 在第 0 位
+b = 7      -> 0E 00 00 00      b 在第 1~3 位（0x0E = 0000 1110）
+c = 15     -> F0 00 00 00      c 在第 4~7 位（0xF0 = 1111 0000）
+```
+
+**注意后三个字节全是 0**：8 个位域装进了一个 4 字节的存储单元，
+**剩下的 24 位是没用到的填充**——这也是 `sizeof` 为 4 而不是 1 的原因。
+
+## 4.1 代价：布局由实现决定
+
+**标准只规定位域能表达，不规定怎么排。** 三件事都由实现自己定：
+
+`实测数据`
+
+| 问题 | 本机（gcc 15.2.0，Windows x64）实测 |
+|---|---|
+| 谁在高位 | **先声明的在低位**（`a`→第 0 位，`b`→第 1~3 位，`c`→第 4~7 位） |
+| 能不能跨存储单元 | **不跨**：`{unsigned char a:6, b:6;}` 里 `b` 另起一个字节 |
+| 存储单元多大 | 由声明类型决定：`unsigned int` 是 4 字节，`unsigned char` 是 1 字节 |
+
+**「不跨单元」是有代价的**：
+
+`实测数据`
+`Text`
+
+```text
+S1: { unsigned char a:6, b:6; }   sizeof = 2
+    只把 a 填满 -> 3F 00          a 独占第 1 个字节
+    只把 b 填满 -> 00 3F          b 独占第 2 个字节
+
+S2: { unsigned int a:20, b:20; }  sizeof = 8
+    只把 a 填满 -> FF FF 0F 00 00 00 00 00     a 占前 4 字节的低 20 位
+    只把 b 填满 -> 00 00 00 00 FF FF 0F 00     b 从第 2 个单元重新开始
+```
+
+**`S2` 的 40 位本来 5 字节就够，实测 `sizeof` 是 8**——
+因为 `b` 不肯跨过 4 字节的边界，另起了一个单元。
+
+> [!WARNING]
+> **位域的布局不可移植。**
+> 换一个编译器、换一个平台，上面这些结论都可能不同。
+> **用位域直接对应硬件寄存器或网络协议时，必须实测目标平台。**
+
+## 4.2 它本身是「移位 + 掩码」的语法糖
+
+`实测数据`
+`C`
+
+```c
+/* bitfield_asm.c    编译：gcc -std=c23 -O0 -S bitfield_asm.c -o bitfield_asm.s */
+struct Flags { unsigned int a:1, b:3, c:4; };
+
+void set_b(struct Flags *f, unsigned int v) { f->b = v; }
+unsigned int get_b(struct Flags *f) { return f->b; }
+```
+
+`实测数据`
+`Assembly`
+
+```asm
+set_b:
+    movl    24(%rbp), %eax
+    andl    $7, %eax                /* 掩码：只保留 3 位 */
+    movq    16(%rbp), %rdx
+    andl    $7, %eax
+    leal    (%rax,%rax), %ecx       /* 左移 1 位（b 从第 1 位开始） */
+    movzbl  (%rdx), %eax            /* 读出原来的字节 */
+    andl    $-15, %eax              /* 清掉 b 占的那 3 位 */
+    orl     %ecx, %eax              /* 或进去 */
+    movb    %al, (%rdx)             /* 写回 */
+    ret
+
+get_b:
+    movq    16(%rbp), %rax
+    movzbl  (%rax), %eax            /* 读出一个字节 */
+    shrb    %al                     /* 右移 1 位 */
+    andl    $7, %eax                /* 再掩码 */
+    ret
+```
+
+**编译器替你做的就是手工写法里那些 `&`、`|`、`<<`、`>>`。**
+**理解这一点，就明白位域省掉的是什么、又没省掉什么**：
+省掉的是算错的风险，**没省掉的是「布局必须与目标一致」这件事**。
+
+## 4.3 两条限制
+
+**第一，不能取地址**：
+
+`实测数据`
+`Text`
+
+```text
+error: cannot take address of bit-field 'a'
+```
+
+**位域可能只占一个字节里的几位，没有独立地址**，
+因此也不能 `sizeof`、不能拿它的地址传给函数。
+
+**第二，赋值会静默截断**：`f.b = 9`（3 位）之后得到 `1`，
+`9 & 0b111 = 1`——**不报错，只截断**。
 
 `实测数据`
 `Text`
@@ -627,31 +913,15 @@ a=1 b=5 c=9
 b 赋值 9 之后 = 1
 ```
 
-**两个要点**：
+## 4.4 什么时候用
 
-**第一，`sizeof` 是 4 而不是 1。** 位域的大小由**声明的类型**决定：
-
-`实测数据`
-
-| 声明 | 大小 |
+| 场合 | 建议 |
 |---|---|
-| `unsigned int a:1, b:3, c:4;` | **4 字节** |
-| `unsigned char a:1, b:3, c:4;` | **1 字节** |
-| 单个 `unsigned int a:1;` | 4 字节 |
-| 单个 `unsigned char a:1;` | 1 字节 |
+| 自己定义的文件格式、自己的协议 | 位域好用，**在注释里写明布局** |
+| 直接对应硬件寄存器 | **布局不可移植**，用「整型 + 位掩码」更稳 |
+| 需要跨编译器、跨平台一致 | 同上；若一定要用位域，**逐平台实测后再定** |
 
-**位数之和只有 8 位，但 `unsigned int` 的存储单元是 4 字节。**
-
-**第二，`b = 9` 之后变成了 1。** 3 位最多表示 0~7，
-9 的高位被截掉了（`9 & 0b111 = 1`）。
-
-> [!WARNING]
-> **位域赋值不会报错，只会静默截断。**
-> 而且位域的具体布局（谁在高位、能不能跨存储单元）
-> **由实现决定，标准不作保证**——
-> **用位域直接对应硬件寄存器或网络协议时不可移植。**
-
-**嵌入式里对应寄存器时，通常改用「整型 + 位掩码」**，
+**嵌入式里对应寄存器时通常改用「整型 + 位掩码」**，
 做法见《01-编译器/03-嵌入式与交叉编译.md》第 4.3 小节。
 
 ---
@@ -905,6 +1175,179 @@ gcc -std=c23 union_share.c -o union_share && ./union_share
 # 写 v.b[0] 之后 v.u = 0x112233FF（被覆盖）
 # 写 s.b[0] 之后 s.u = 0x11223344（没变）
 ```
+
+## A.8 枚举名有没有进调试信息
+
+`C`
+
+```c
+/* enum_dwarf.c    编译：gcc -std=c23 -g enum_dwarf.c -o enum_dwarf */
+enum Color { RED, GREEN, BLUE };
+
+int main(void) {
+    enum Color c = GREEN;
+    return c;
+}
+```
+
+`C`
+
+```c
+/* define_dwarf.c    编译：gcc -std=c23 -g define_dwarf.c -o define_dwarf */
+#define RED   0
+#define GREEN 1
+#define BLUE  2
+
+int main(void) {
+    int c = GREEN;
+    return c;
+}
+```
+
+`Bash`
+
+```bash
+gcc -std=c23 -g enum_dwarf.c   -o enum_dwarf.exe
+gcc -std=c23 -g define_dwarf.c -o define_dwarf.exe
+objdump --dwarf=info enum_dwarf.exe   | grep -E ":( +)(RED|GREEN|BLUE|Color)$"
+objdump --dwarf=info define_dwarf.exe | grep -E ":( +)(RED|GREEN|BLUE|Color)$"
+```
+
+`实测数据`
+`Text`
+
+```text
+enum 版：
+    DW_AT_name        : Color
+    DW_AT_name        : RED
+    DW_AT_name        : GREEN
+    DW_AT_name        : BLUE
+
+#define 版：
+    （一个都没有）
+```
+
+**`enum` 生成的类型在调试信息里是完整的**：
+`DW_TAG_enumeration_type`（名字 `Color`、底层是无符号 4 字节）
+下面挂着三个 `DW_TAG_enumerator`，各自带名字与常量值。
+
+## A.9 位域：位序、跨单元与汇编
+
+`C`
+
+```c
+/* ctrl_reg.c */
+#include <stdio.h>
+#include <string.h>
+
+struct Ctrl {
+    unsigned int addr : 16;         /* 15..0  */
+    unsigned int mode : 14;         /* 29..16 */
+    unsigned int irq  : 1;          /* 30     */
+    unsigned int en   : 1;          /* 31     */
+};
+
+int main(void) {
+    struct Ctrl c;
+    memset(&c, 0, sizeof c);
+    c.en = 1;
+    c.mode = 3;
+    c.addr = 0x1234;
+
+    unsigned char raw[4];
+    memcpy(raw, &c, sizeof c);
+    printf("sizeof = %zu\n", sizeof c);
+    printf("高字节在前: %02X %02X %02X %02X\n", raw[3], raw[2], raw[1], raw[0]);
+    return 0;
+}
+```
+
+`C`
+
+```c
+/* bitfield_bits.c */
+#include <stdio.h>
+#include <string.h>
+
+struct Flags { unsigned int a:1, b:3, c:4; };   /* 共 8 位 */
+struct S1 { unsigned char a:6, b:6; };          /* 两个 6 位 */
+struct S2 { unsigned int  a:20, b:20; };        /* 两个 20 位 */
+
+int main(void) {
+    struct Flags f;
+    unsigned char raw[8];
+
+    memset(&f, 0, sizeof f); f.a = 1;
+    memcpy(raw, &f, sizeof f);
+    printf("只把 a 置 1   -> %02X %02X %02X %02X\n", raw[0], raw[1], raw[2], raw[3]);
+
+    memset(&f, 0, sizeof f); f.b = 7;
+    memcpy(raw, &f, sizeof f);
+    printf("只把 b 置 7   -> %02X %02X %02X %02X\n", raw[0], raw[1], raw[2], raw[3]);
+
+    memset(&f, 0, sizeof f); f.c = 15;
+    memcpy(raw, &f, sizeof f);
+    printf("只把 c 置 15  -> %02X %02X %02X %02X\n", raw[0], raw[1], raw[2], raw[3]);
+
+    struct S1 s1;
+    memset(&s1, 0, sizeof s1); s1.a = 0x3F;
+    memcpy(raw, &s1, sizeof s1);
+    printf("S1: a 填满    -> %02X %02X   （sizeof=%zu）\n", raw[0], raw[1], sizeof s1);
+
+    memset(&s1, 0, sizeof s1); s1.b = 0x3F;
+    memcpy(raw, &s1, sizeof s1);
+    printf("S1: b 填满    -> %02X %02X\n", raw[0], raw[1]);
+
+    struct S2 s2;
+    memset(&s2, 0, sizeof s2); s2.a = 0xFFFFF;
+    memcpy(raw, &s2, sizeof s2);
+    printf("S2: a 填满    -> %02X %02X %02X %02X %02X %02X %02X %02X   （sizeof=%zu）\n",
+           raw[0], raw[1], raw[2], raw[3], raw[4], raw[5], raw[6], raw[7], sizeof s2);
+
+    memset(&s2, 0, sizeof s2); s2.b = 0xFFFFF;
+    memcpy(raw, &s2, sizeof s2);
+    printf("S2: b 填满    -> %02X %02X %02X %02X %02X %02X %02X %02X\n",
+           raw[0], raw[1], raw[2], raw[3], raw[4], raw[5], raw[6], raw[7]);
+    return 0;
+}
+```
+
+`C`
+
+```c
+/* bitfield_addr.c    编译：gcc -std=c23 -c bitfield_addr.c （失败） */
+struct Flags { unsigned int a:1, b:3; };
+
+int main(void) {
+    struct Flags f;
+    unsigned int *p = &f.a;         /* 取位域的地址 */
+    (void)p;
+    return 0;
+}
+```
+
+`C`
+
+```c
+/* bitfield_asm.c    编译：gcc -std=c23 -O0 -S bitfield_asm.c -o bitfield_asm.s */
+struct Flags { unsigned int a:1, b:3, c:4; };
+
+void set_b(struct Flags *f, unsigned int v) { f->b = v; }
+unsigned int get_b(struct Flags *f) { return f->b; }
+```
+
+`Bash`
+
+```bash
+gcc -std=c23 ctrl_reg.c        -o ctrl_reg        && ./ctrl_reg
+gcc -std=c23 bitfield_bits.c   -o bitfield_bits   && ./bitfield_bits
+gcc -std=c23 -c bitfield_addr.c -o bitfield_addr.o
+gcc -std=c23 -O0 -S bitfield_asm.c -o bitfield_asm.s
+```
+
+**注意 `bitfield_bits.c` 里每次都先 `memset` 清零**：
+位域只覆盖存储单元里的几个位，**剩下的位是填充**，
+不清零就会打印出未初始化的字节。
 
 ---
 
