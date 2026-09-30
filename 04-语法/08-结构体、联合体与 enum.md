@@ -277,6 +277,92 @@ A 各成员偏移: c=0 i=4 d=8
 
 ## 2.1 成员共享同一块内存
 
+**`union` 与 `struct` 只差一件事：成员的起始偏移。**
+`struct` 的成员依次排开，`union` 的成员**全部从偏移 0 开始**——
+**它们互相重叠，占的是同一块内存。**
+
+`实测数据`
+
+| | `struct` | `union` |
+|---|---|---|
+| 成员的起始偏移 | 依次排开：0、4、8…… | **全部是 0** |
+| 大小 | 各成员之和，再加填充 | **最大成员的大小**，再按对齐补足 |
+| 成员的地址 | 各不相同 | **全都相同**，等于联合体自己的地址 |
+| 给一个成员赋值 | 不影响其他成员 | **覆盖其他成员占的那几个字节** |
+| 典型用途 | 把相关的数据捆在一起 | 同一块内存的多种解释、省空间 |
+
+**下面这段程序把前四条都测了出来**——
+两个类型的成员完全相同，只是一个是 `struct`、一个是 `union`：
+
+`实测数据`
+`C`
+
+```c
+/* union_share.c    编译：gcc -std=c23 union_share.c -o union_share
+ * 完整文件见附录 A.7。
+ */
+#include <stddef.h>
+#include <stdio.h>
+
+union U  { unsigned int u; unsigned char b[4]; float f; };
+struct S { unsigned int u; unsigned char b[4]; float f; };
+
+int main(void) {
+    union U v;
+    struct S s;
+
+    printf("sizeof(union U)  = %zu\n", sizeof(union U));
+    printf("sizeof(struct S) = %zu\n", sizeof(struct S));
+
+    printf("&v.u = %p, &v.b = %p, &v.f = %p\n",
+           (void *)&v.u, (void *)&v.b, (void *)&v.f);
+    printf("&s.u = %p, &s.b = %p, &s.f = %p\n",
+           (void *)&s.u, (void *)&s.b, (void *)&s.f);
+
+    v.u = 0x11223344;
+    v.b[0] = 0xFF;                      /* 只改一个字节 */
+    printf("写 v.b[0] 之后 v.u = 0x%08X\n", v.u);
+
+    s.u = 0x11223344;
+    s.b[0] = 0xFF;
+    printf("写 s.b[0] 之后 s.u = 0x%08X\n", s.u);
+    return 0;
+}
+```
+
+`实测数据`
+`Text`
+
+```text
+sizeof(union U)  = 4
+sizeof(struct S) = 12
+
+&v.u = 000000af6b9ff7cc, &v.b = 000000af6b9ff7cc, &v.f = 000000af6b9ff7cc
+&s.u = 000000af6b9ff7c0, &s.b = 000000af6b9ff7c4, &s.f = 000000af6b9ff7c8
+
+写 v.b[0] 之后 v.u = 0x112233FF
+写 s.b[0] 之后 s.u = 0x11223344
+```
+
+**联合体的三个成员地址完全相同**：每个成员都从这块内存的开头算起。
+**结构体的三个地址依次相差 4**：成员各占一段，互不重叠。
+**每次运行的地址都不同，看的是「相同还是不同」。**
+
+**只把 `v.b[0]` 改成一个字节，`v.u` 就跟着变了**（`0x11223344` → `0x112233FF`）——
+**因为它俩本来就是同一块内存上的两个名字**。
+结构体那边写 `s.b[0]`，`s.u` 一点没动。
+
+> [!IMPORTANT]
+> **「共享」的准确含义是：所有成员的起始偏移都是 0。**
+> 给一个成员赋值会**覆盖**其他成员所在的那几个字节，
+> **不是「各自保留一份值」。**
+> **`union` 在同一时刻只有一个成员的内容是有意义的。**
+
+## 2.2 联合体用来做什么
+
+**用途一：让同一块内存有多种解释。**
+
+`实测数据`
 `C`
 
 ```c
@@ -326,31 +412,44 @@ v.f = 1 时 v.u = 0x3F800000   （浮点的位模式）
 浮点数在内存里不是「1」这个值，而是这样一串比特
 （见《04-语法/02-数据类型与类型系统.md》第 2.3 小节）。
 
-## 2.2 联合体用来做什么
-
-**用途一：让同一块内存有多种解释。**
-
-`C`
-
-```c
-union {
-    unsigned int  word;         /* 整体看 */
-    unsigned char byte[4];      /* 分开看 */
-} raw;
-```
-
 **用途二：节省空间——同一时刻只会用到其中一个成员。**
 
+`实测数据`
 `C`
 
 ```c
+/* tagged_union.c    编译：gcc -std=c23 tagged_union.c -o tagged_union */
+#include <stdio.h>
+
 struct Value {
-    int type;                   /* 0 = int, 1 = float */
+    int type;                   /* 0 = int，1 = float */
     union {
         int   i;
         float f;
     } data;                     /* 只占最大的那个成员的空间 */
 };
+
+int main(void) {
+    struct Value a = { 0, { .i = 42 } };
+    struct Value b = { 1, { .f = 1.5f } };
+
+    printf("sizeof(struct Value) = %zu\n", sizeof(struct Value));
+    printf("a.type = %d, a.data.i = %d\n", a.type, a.data.i);
+    printf("b.type = %d, b.data.f = %g\n", b.type, b.data.f);
+    return 0;
+}
+```
+
+**`type` 决定该读哪个成员**——这叫「带标签的联合体」，
+是 C 里表达「几种可能之一」的常用手法。
+
+`实测数据`
+`Text`
+
+```text
+sizeof(struct Value) = 8
+a.type = 0, a.data.i = 42
+b.type = 1, b.data.f = 1.5
 ```
 
 > [!CAUTION]
@@ -754,6 +853,57 @@ gcc -std=c23 -c dot_on_pointer.c -o d.o
 
 gcc -std=c23 -c star_dot.c -o s.o
 # error: 'q' is a pointer; did you mean to use '->'?（同一条）
+```
+
+## A.7 联合体：成员地址、大小与覆盖
+
+`C`
+
+```c
+/* union_share.c */
+#include <stddef.h>
+#include <stdio.h>
+
+union U  { unsigned int u; unsigned char b[4]; float f; };
+struct S { unsigned int u; unsigned char b[4]; float f; };
+
+int main(void) {
+    union U v;
+    struct S s;
+
+    printf("sizeof(union U)  = %zu\n", sizeof(union U));
+    printf("sizeof(struct S) = %zu\n", sizeof(struct S));
+
+    printf("&v.u = %p, &v.b = %p, &v.f = %p\n",
+           (void *)&v.u, (void *)&v.b, (void *)&v.f);
+    printf("&s.u = %p, &s.b = %p, &s.f = %p\n",
+           (void *)&s.u, (void *)&s.b, (void *)&s.f);
+
+    printf("偏移：union u=%zu b=%zu f=%zu\n",
+           offsetof(union U, u), offsetof(union U, b), offsetof(union U, f));
+    printf("偏移：struct u=%zu b=%zu f=%zu\n",
+           offsetof(struct S, u), offsetof(struct S, b), offsetof(struct S, f));
+
+    v.u = 0x11223344;
+    v.b[0] = 0xFF;                      /* 只改一个字节 */
+    printf("写 v.b[0] 之后 v.u = 0x%08X\n", v.u);
+
+    s.u = 0x11223344;
+    s.b[0] = 0xFF;
+    printf("写 s.b[0] 之后 s.u = 0x%08X\n", s.u);
+    return 0;
+}
+```
+
+`Bash`
+
+```bash
+gcc -std=c23 union_share.c -o union_share && ./union_share
+# sizeof(union U) = 4 / sizeof(struct S) = 12
+# 联合体三个成员地址相同；结构体依次相差 4
+# 偏移：union 全是 0；struct 是 0 / 4 / 8
+# 写 v.b[0] 之后 v.u = 0x112233FF（被覆盖）
+# 写 s.b[0] 之后 s.u = 0x11223344（没变）
 ```
 
 ---
