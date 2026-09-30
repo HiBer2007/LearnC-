@@ -133,6 +133,7 @@ Point p = { 1, 2 };         /* 可以这样写了 */
 
 ## 1.4 `.` 与 `->`
 
+`实测数据`
 `C`
 
 ```c
@@ -154,10 +155,63 @@ int main(void) {
 
 **三行输出都是 1。**
 
-> [!TIP]
-> **`q->x` 就是 `(*q).x` 的简写。**
-> 括号不能省：`*q.x` 会被理解成 `*(q.x)`，而 `q.x` 本身就是错的。
+**两种写法编译出来完全一样**：
+
+`实测数据`
+`C`
+
+```c
+/* arrow_same.c    编译：gcc -std=c23 -O0 -S arrow_same.c -o arrow_same.s */
+struct Point { int x; int y; };
+
+int via_arrow(struct Point *q) { return q->x; }        /* 用 -> */
+int via_deref(struct Point *q) { return (*q).x; }      /* 用 (*q).x */
+```
+
+`实测数据`
+`Assembly`
+
+```asm
+via_arrow:
+    pushq   %rbp
+    movq    %rsp, %rbp
+    movq    %rcx, 16(%rbp)
+    movq    16(%rbp), %rax
+    movl    (%rax), %eax
+    popq    %rbp
+    ret
+```
+
+**`via_deref` 与它逐条相同。**
+
+**为什么那对括号不能省**：
+
+`Text`
+
+```
+   q->x    等价于   (*q).x
+   *q.x    先算 .   得到 *(q.x)      ← 不是想要的意思
+   q.x     本身就是错的
+```
+
+**两种错法报的是同一条错误**：
+
+`实测数据`
+`Text`
+
+```text
+q.x  → error: 'q' is a pointer; did you mean to use '->'?
+*q.x → error: 'q' is a pointer; did you mean to use '->'?
+```
+
+**`q` 是指针，它没有成员**；而 `*q.x` 里 `.` 的优先级高于 `*`，
+编译器先算 `q.x`，于是撞上同一条错误。
+
+> [!IMPORTANT]
 > **`->` 存在的唯一理由就是省掉那对括号。**
+> `q->x` 与 `(*q).x` 含义相同、编译结果相同，**它没有别的作用。**
+
+**这是语法糖的一个典型例子**（见《04-语法/01-一些基础概念.md》第 1.5 小节）。
 
 ## 1.5 成员顺序影响大小
 
@@ -631,6 +685,68 @@ int main(void) {
 ```bash
 gcc -std=c23 -c cmp.c -o c.o
 # invalid operands to binary ==
+```
+
+## A.6 `->` 与 `(*q).x` 的等价性
+
+`C`
+
+```c
+/* arrow.c */
+#include <stdio.h>
+
+struct Point { int x; int y; };
+
+int main(void) {
+    struct Point p = { 1, 2 };
+    struct Point *q = &p;
+    printf("p.x    = %d\n", p.x);
+    printf("q->x   = %d\n", q->x);
+    printf("(*q).x = %d\n", (*q).x);
+    return 0;
+}
+```
+
+`C`
+
+```c
+/* arrow_same.c */
+struct Point { int x; int y; };
+
+int via_arrow(struct Point *q) { return q->x; }        /* 用 -> */
+int via_deref(struct Point *q) { return (*q).x; }      /* 用 (*q).x */
+```
+
+`C`
+
+```c
+/* dot_on_pointer.c    编译：gcc -std=c23 -c dot_on_pointer.c （失败） */
+struct Point { int x; int y; };
+int f(struct Point *q) { return q.x; }
+```
+
+`C`
+
+```c
+/* star_dot.c    编译：gcc -std=c23 -c star_dot.c （失败） */
+struct Point { int x; int y; };
+int f(struct Point *q) { return *q.x; }
+```
+
+`Bash`
+
+```bash
+gcc -std=c23 arrow.c -o arrow && ./arrow
+# p.x = 1 / q->x = 1 / (*q).x = 1
+
+gcc -std=c23 -O0 -S arrow_same.c -o arrow_same.s
+# via_arrow 与 via_deref 两个函数的汇编逐条相同
+
+gcc -std=c23 -c dot_on_pointer.c -o d.o
+# error: 'q' is a pointer; did you mean to use '->'?
+
+gcc -std=c23 -c star_dot.c -o s.o
+# error: 'q' is a pointer; did you mean to use '->'?（同一条）
 ```
 
 ---
