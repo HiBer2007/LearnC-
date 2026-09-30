@@ -6,19 +6,21 @@
 2. 打开 `src/main.c`，在行号左侧单击以设置断点。
 3. 按 **`F5`**，选择：
 
-   | 选项 | 编译器 | 调试器 | 产物 | 本工作区是否可用 |
+   | 选项 | 编译器 | 调试器 | 产物 | 可用性 |
    |---|---|---|---|---|
-   | `GDB · CMake 工程 (MinGW gcc)` | gcc | GDB | `build/mingw/bin/app.exe` | **不可用**，见下 |
-   | `VS2022 · CMake 工程 (MSVC cl)` | cl.exe | VS2022 调试器 | `build/msvc/bin/Debug/app.exe` | 可用 |
+   | `GDB · CMake 工程 (MinGW gcc)` | gcc | GDB | `build/mingw/bin/app.exe` | **路径含中文时不可用**，见下 |
+   | `MSVC · CMake 工程 (MSVC cl)` | cl.exe | Visual Studio 调试器 | `build/msvc/bin/Debug/app.exe` | 可用 |
 
 **CMake 的“配置”与“编译”两个步骤均自动完成**，无需手动输入命令。
 
-> **注意**：工程所在路径含中文时（本工作区即是如此），
-> 因此 **`GDB ·` 开头的配置无法启动调试**——GDB 打不开中文路径下的可执行文件。
-> 请选择 `VS2022 ·` 开头的配置。
+> [!WARNING]
+> 工作区路径中含中文时，**`GDB ·` 开头的配置无法启动调试**——GDB 打不开该路径下的可执行文件。
+> 原因是 GDB 在 Windows 上经 MI 协议接收文件名时期望 ANSI 代码页字节，
+> 而 VS Code 发送的是 UTF-8 字节。
+> **路径全为英文时不受影响。**
 >
-> 原因与解决方案见《01-编译器/02-环境配置.md》第 1 章第 2 节。
-> 把本文件夹移到全英文路径后，GDB 路线即可恢复可用。
+> 若路径含中文，请选择 `MSVC ·` 开头的配置。把本文件夹移到全英文路径后，GDB 路线即可恢复可用。
+> 详细原因与解决方案见《01-编译器/02-环境配置.md》第 1 章第 2 节。
 
 ## 演示内容
 
@@ -43,7 +45,7 @@ include/calc.h ← 两者共用的声明
 ```
 03-CMake-C\
 ├── CMakeLists.txt        工程定义（源文件必须显式列出）
-├── CMakePresets.json     两套预设：mingw-gdb / msvc-vs2022
+├── CMakePresets.json     两套预设：mingw-gdb / msvc
 ├── include\calc.h
 ├── src\main.c, calc.c
 ├── .vscode\              调试与构建配置
@@ -76,7 +78,7 @@ CMake 会自行找到 Visual Studio。这也是 MSVC 路线使用
 
 ```powershell
 cmake --preset mingw-gdb    ; cmake --build --preset mingw-gdb
-cmake --preset msvc-vs2022  ; cmake --build --preset msvc-debug
+cmake --preset msvc         ; cmake --build --preset msvc-debug
 ```
 
 ## 使用 CMake Tools 扩展的图形界面（可选）

@@ -51,14 +51,14 @@
     },
 
     // ===============================================================
-    //  MSVC + VS2022 调试器
+    //  MSVC + Visual Studio 调试器
     //  用 Visual Studio 生成器时【不需要】vcvars——CMake 自己会找到 VS
     // ===============================================================
     {
-      "label": "CMake: 配置 (MSVC + VS2022)",
+      "label": "CMake: 配置 (MSVC)",
       "type": "process",
       "command": "cmake",
-      "args": ["--preset", "msvc-vs2022"],
+      "args": ["--preset", "msvc"],
       "options": { "cwd": "${workspaceFolder}" },
       "problemMatcher": [],
       "presentation": {
@@ -68,7 +68,7 @@
       }
     },
     {
-      "label": "CMake: 编译 (MSVC + VS2022)",
+      "label": "CMake: 编译 (MSVC)",
       "type": "process",
       "command": "cmake",
       "args": ["--build", "--preset", "msvc-debug"],
@@ -81,11 +81,11 @@
       }
     },
     {
-      "label": "构建: CMake (MSVC + VS2022)",
+      "label": "构建: CMake (MSVC)",
       "dependsOrder": "sequence",
       "dependsOn": [
-        "CMake: 配置 (MSVC + VS2022)",
-        "CMake: 编译 (MSVC + VS2022)"
+        "CMake: 配置 (MSVC)",
+        "CMake: 编译 (MSVC)"
       ],
       "problemMatcher": [],
       "detail": "配置并编译，产物 build/msvc/bin/Debug/app.exe"

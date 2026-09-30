@@ -19,9 +19,9 @@
       }
     },
     {
-      "name": "msvc-vs2022",
-      "displayName": "MSVC + VS2022 调试器 (Visual Studio 17 2022, x64)",
-      "description": "cl.exe 编译，产出 PDB，供 VS2022 调试器调试；产物 build/msvc/bin/Debug/app.exe",
+      "name": "msvc",
+      "displayName": "MSVC + Visual Studio 调试器 (Visual Studio 17 2022, x64)",
+      "description": "cl.exe 编译，产出 PDB，供 Visual Studio 调试器调试；产物 build/msvc/bin/Debug/app.exe",
       "generator": "Visual Studio 17 2022",
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build/msvc",
@@ -38,8 +38,8 @@
     },
     {
       "name": "msvc-debug",
-      "displayName": "编译 (MSVC + VS2022 调试器, Debug)",
-      "configurePreset": "msvc-vs2022",
+      "displayName": "编译 (MSVC + Visual Studio 调试器, Debug)",
+      "configurePreset": "msvc",
       "configuration": "Debug"
     }
   ]

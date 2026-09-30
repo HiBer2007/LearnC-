@@ -6,15 +6,18 @@
 2. 打开 `src/main.cpp`，设置断点。
 3. 按 **`F5`**，选择：
 
-   | 选项 | 编译器 | 调试器 | 产物 | 本工作区是否可用 |
+   | 选项 | 编译器 | 调试器 | 产物 | 可用性 |
    |---|---|---|---|---|
-   | `GDB · CMake 工程 (MinGW g++)` | **g++** | GDB | `build/mingw/bin/app.exe` | **不可用**，见下 |
-   | `VS2022 · CMake 工程 (MSVC cl)` | cl.exe | VS2022 调试器 | `build/msvc/bin/Debug/app.exe` | 可用 |
+   | `GDB · CMake 工程 (MinGW g++)` | **g++** | GDB | `build/mingw/bin/app.exe` | **路径含中文时不可用**，见下 |
+   | `MSVC · CMake 工程 (MSVC cl)` | cl.exe | Visual Studio 调试器 | `build/msvc/bin/Debug/app.exe` | 可用 |
 
-> **注意**：工程所在路径含中文时（本工作区即是如此），
-> 因此 **`GDB ·` 开头的配置无法启动调试**——GDB 打不开中文路径下的可执行文件。
-> 请选择 `VS2022 ·` 开头的配置。
+> [!WARNING]
+> 工程所在路径中含中文时，GDB 无法打开可执行文件，调试无法启动。
+> 原因是 GDB 在 Windows 上经 MI 协议接收文件名时期望 ANSI 代码页字节，
+> 而 VS Code 发送的是 UTF-8 字节。
+> **路径全为英文时不受影响。**
 >
+> 因此 **`GDB ·` 开头的配置不可用**，**若**路径含中文，请选择 `MSVC ·` 开头的配置。
 > 原因与解决方案见《01-编译器/02-环境配置.md》第 1 章第 2 节。
 > 把本文件夹移到全英文路径后，GDB 路线即可恢复可用。
 
@@ -64,14 +67,14 @@ include/calc.hpp ← 共用声明
 1. **必须使用 `g++`，不能使用 `gcc`**：`gcc` 编译 `.cpp` 不会链接 `libstdc++`，
    会报出大量 `undefined reference`
 2. **产物依赖 DLL**：g++ 编译的 exe 依赖 `libstdc++-6.dll` 与 `libgcc_s_seh-1.dll`。
-   本机因 `<MinGW>\bin` 在 PATH 中而可运行，**复制到其他计算机时会提示缺少 DLL**。
+   `<MinGW>\bin` 在 PATH 中时可运行，**复制到其他计算机时会提示缺少 DLL**。
    如需分发，请添加 `-static-libgcc -static-libstdc++`
 
 ## 命令行方式
 
 ```powershell
 cmake --preset mingw-gdb    ; cmake --build --preset mingw-gdb
-cmake --preset msvc-vs2022  ; cmake --build --preset msvc-debug
+cmake --preset msvc         ; cmake --build --preset msvc-debug
 ```
 
 ## 新增源文件时需修改 CMakeLists.txt

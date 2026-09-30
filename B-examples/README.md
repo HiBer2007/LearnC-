@@ -11,10 +11,10 @@
 
 | 示例 | 类型 | 演示重点 | 调试器 |
 |---|---|---|---|
-| [`01-c-single-file`](01-c-single-file/) | C 单文件 | 指针、数组、初始化 | GDB / VS2022 |
-| [`02-cpp-single-file`](02-cpp-single-file/) | C++ 单文件 | 类、STL 容器、引用 | GDB / VS2022 |
-| [`03-CMake-C`](03-CMake-C/) | CMake 多文件（C） | 跨文件单步、递归堆栈 | GDB / VS2022 |
-| [`04-CMake-CPP`](04-CMake-CPP/) | CMake 多文件（C++） | 同上 + STL 整齐打印 | GDB / VS2022 |
+| [`01-c-single-file`](01-c-single-file/) | C 单文件 | 指针、数组、初始化 | GDB / Visual Studio 调试器 |
+| [`02-cpp-single-file`](02-cpp-single-file/) | C++ 单文件 | 类、STL 容器、引用 | GDB / Visual Studio 调试器 |
+| [`03-CMake-C`](03-CMake-C/) | CMake 多文件（C） | 跨文件单步、递归堆栈 | GDB / Visual Studio 调试器 |
+| [`04-CMake-CPP`](04-CMake-CPP/) | CMake 多文件（C++） | 同上 + STL 整齐打印 | GDB / Visual Studio 调试器 |
 | [`05-joint-debug`](05-joint-debug/) | 联合调试（Windows + Linux） | 一个窗口同时调试两个程序 | GDB（跨系统） |
 
 > **说明**：STL 指 `std::vector` / `std::string` / `std::sort` 这类 **C++ 标准库中现成的**
@@ -26,7 +26,7 @@
 >
 > **注意**：让 STL 整齐显示的关键，是 `setupCommands` 中的 `-enable-pretty-printing`
 > （详见 [`02-cpp-single-file/README.md`](02-cpp-single-file/README.md) 的实测对比）。
-> 部分 GDB 版本还需要额外的路径配置，本工作区的配置一并写入了一条基于
+> 部分 GDB 版本还需要额外的路径配置，示例工程的配置一并写入了一条基于
 > `gdb.PYTHONDIR` 的 `python` 命令作为兜底；该命令在不需要时不会产生副作用。
 >
 > **关于示例 05**：它需要 WSL 环境。搭建方法、原理与远程调试见《02-调试器/02-跨系统调试.md》。
@@ -65,28 +65,28 @@ undefined reference to `add'
 
 每个示例均提供两条路线，按 F5 后在列表中选择：
 
-| 路线 | 配置名里含 | 编译器 | 调试信息格式 | 本工作区是否可用 |
+| 路线 | 配置名里含 | 编译器 | 调试信息格式 | 路径含中文时是否可用 |
 |---|---|---|---|---|
 | **GDB** | `GDB ·` | MinGW `gcc` / `g++` | DWARF | **不可用**，见下 |
-| **VS2022** | `VS2022 ·` | MSVC `cl.exe` | PDB | 可用 |
+| **MSVC** | `MSVC ·` | MSVC `cl.exe` | PDB | 可用 |
 
-> **关于 GDB 路线不可用的原因（重要）**
->
-> 工程所在路径中含中文时（本工作区即是如此）。GDB 在 Windows 上经 MI 协议
-> 接收文件名时期望 ANSI 代码页（936）字节，而 VS Code 发送 UTF-8 字节，
-> 导致 GDB **无法打开可执行文件**，调试完全无法启动。
+> [!WARNING]
+> 工作区路径中含中文时，GDB 无法打开可执行文件，调试无法启动。
+> 原因是 GDB 在 Windows 上经 MI 协议接收文件名时期望 ANSI 代码页（936）字节，
+> 而 VS Code 发送的是 UTF-8 字节。
 > 该问题无法通过任何配置项解决。
+> **路径全为英文时不受影响。**
 >
 > 表现：按 F5 后提示 `Program path ... is missing or invalid`（但文件确实存在），
 > 或弹出空的"选择要终止的调试会话"列表后无反应。
 >
-> **在本工作区中请使用 VS2022 路线。** 若需要调试 gcc 编译的产物，
+> **路径含中文时请使用 MSVC 路线。** 若需要调试 gcc 编译的产物，
 > 可安装 CodeLLDB 扩展（其 LLDB 不受该限制）。详见
 > 《01-编译器/02-环境配置.md》第 1 章第 2 节。
 >
 > 把示例移到全英文路径后，GDB 路线即可恢复可用。
 
-> **说明**：GDB 只识别 gcc 产出的 DWARF，VS2022 调试器只识别 cl 产出的 PDB，两者互不兼容。
+> **说明**：GDB 只识别 gcc 产出的 DWARF，Visual Studio 调试器只识别 cl 产出的 PDB，两者互不兼容。
 > （唯一的例外是 LLDB，见《01-编译器/02-环境配置.md》第 1 章。）
 
 ---

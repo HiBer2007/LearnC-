@@ -3,11 +3,11 @@
 #
 #  两套构建预设见同目录的 CMakePresets.json：
 #     mingw-gdb    → MinGW GCC 编译，用 GDB 调试
-#     msvc-vs2022  → MSVC 编译，用 VS2022 调试器调试
+#     msvc         → MSVC 编译，用 Visual Studio 调试器调试
 #
 #  命令行用法：
 #     cmake --preset mingw-gdb    && cmake --build --preset mingw-gdb
-#     cmake --preset msvc-vs2022  && cmake --build --preset msvc-debug
+#     cmake --preset msvc         && cmake --build --preset msvc-debug
 #
 #  VS Code 里直接按 F5，会自动完成「配置 + 编译 + 启动调试」。
 # ===================================================================

@@ -10,8 +10,8 @@
   //    表现：提示 "Program path ... is missing or invalid"（但文件确实存在），
   //          或弹出空的「选择要终止的调试会话」列表后无反应。
   //
-  //    工程所在路径含中文时（本工作区即是如此），「GDB ·」配置【不可用】，
-  //    请使用「VS2022 ·」配置（或用 CodeLLDB）。
+  //    工程所在路径含中文时（此类路径下），「GDB ·」配置【不可用】，
+  //    请使用「MSVC ·」配置（或用 CodeLLDB）。
   //    把工程移到全英文路径后，GDB 配置即可恢复正常。
   //
   //    详见《01-编译器/02-环境配置.md》第 1 章第 2 节、第 9 章第 13 节。
@@ -53,7 +53,7 @@
       }
     },
     {
-      "name": "VS2022 · CMake 工程 (MSVC cl)",
+      "name": "MSVC · CMake 工程 (MSVC cl)",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/msvc/bin/Debug/app.exe",
@@ -62,7 +62,7 @@
       "cwd": "${workspaceFolder}",
       "environment": [],
       "console": "integratedTerminal",
-      "preLaunchTask": "构建: CMake (MSVC + VS2022)"
+      "preLaunchTask": "构建: CMake (MSVC)"
     }
   ]
 }
