@@ -181,7 +181,7 @@ Windows 版 GDB 的编译参数是：
 ### 关于 gdbserver 的地址
 
 `pipeTransport` 通过管道通信，不涉及网络地址，无需关心。
-但若手工使用 gdbserver，需要注意 WSL 的端口转发行为并不一致（**实测**：
+但若手工使用 gdbserver，需要注意 WSL 的端口转发行为并不一致（<sup>实测</sup>：
 同一实例上某测试服务可用 `127.0.0.1` 访问，而 gdbserver 只能用 WSL 的实际地址）。
 连接被拒时两个地址都试一下。
 
