@@ -4,15 +4,23 @@
 > 加[附加条款](../许可附加条款.md)授权：署名、非商业、禁止演绎、不允许二次分发。
 > 文中引用的代码不受此限，各自保留原有许可证，详见[版权与许可说明.md](../版权与许可说明.md)。
 
-**这一板块讲的全是 C++ 独有的东西。**
+**在这一板块，我们离开 C，走进 C++ 层次更高的那部分。**
 
-类、构造与析构、拷贝与移动、运算符重载、继承与多态、模板、lambda——
-**这些在 C 里都没有对应物**。第四板块里反复出现的那些「C 与 C++ 的分歧」，
-大多是在为这里铺路：引用是为了传参不拷贝，`const` 成员是为了让接口说清自己改不改对象，
+前面四个板块讲的都是两门语言共用的地基，因此每一处都要分清「C 怎么写、C++ 怎么写」；
+**从这里起不再并排**。类、构造与析构、拷贝与移动、运算符重载、继承与多态、模板、lambda——
+**这些在 C 里都没有对应物**，讲它们时也只有 C++ 一种写法可讲。
+
+第四板块里反复出现的那些「C 与 C++ 的分歧」，大多是在为这里铺路：
+引用是为了传参不拷贝，`const` 成员是为了让接口说清自己改不改对象，
 `namespace` 是为了让名字能重名，异常是为了让构造函数能报告失败。
-**这一板块是那些铺垫要去的地方。**
+**这一板块正是那些铺垫要去的地方。**
 
 **而在写第一个类之前，有一件事要先摆正：类与 OOP 从来不是目标，它们是手段。**
+
+**写法上也随之变化：从这一板块起，示例一律以 C++ 为主**，
+不再像第四板块那样成对给出「C 版」与「C++ 版」。
+**需要说明「C 里没有这个」时，用一句话交代，不再展开 C 的实现**——
+硬凑一份等价的 C 版，只会把注意力从 C++ 上引开。
 
 ---
 
@@ -34,39 +42,38 @@
 
 # 第 1 节 类解决的问题
 
-## 1.1 没有类的时候怎么写
+## 1.1 没有封装的时候怎么写
 
 **栈是一个合适的例子**：它有一组数据（元素与栈顶位置），
 有一组操作（入栈、出栈），而且**两者必须保持一致**。
 
-用 C 写，就是第四板块里已经熟悉的样子——结构体加一组函数：
+**先看不加封装时的写法**——数据摆在外面，操作写成一组独立的函数：
 
-`C`
+`C++`
 
-```c
-/* stack_c.c    编译：gcc -std=c23 -c stack_c.c -o stack_c.o（这里只有数据与函数，完整的程序见第 1.2 小节） */
-#include <stdio.h>
+```cpp
+/* stack_plain.cpp    编译：g++ -std=c++17 -c stack_plain.cpp -o stack_plain.o */
+#include <cstdio>
 
-#define CAP 4
+struct Stack { int data[4]; int top; };     // 内部状态全摆在外面
 
-struct Stack { int data[CAP]; int top; };   /* 内部状态全摆在外面 */
+void stack_init(Stack *s) { s->top = 0; }
 
-void stack_init(struct Stack *s) { s->top = 0; }
-
-int stack_push(struct Stack *s, int v) {
-    if (s->top >= CAP) return 0;
+int stack_push(Stack *s, int v) {
+    if (s->top >= 4) return 0;
     s->data[s->top++] = v;
     return 1;
 }
 
-int stack_pop(struct Stack *s, int *out) {
+int stack_pop(Stack *s, int *out) {
     if (s->top <= 0) return 0;
     *out = s->data[--s->top];
     return 1;
 }
 ```
 
-**这份代码没有错**，它也能跑（把上面这三段存成 `stack_c.c`，再配一个 `main`，就是完整的程序）。麻烦在别处。
+**这不是「C 的写法」，C++ 里同样能这么写**——上面这份代码没有用到类的任何特性。
+麻烦在别处。
 
 ## 1.2 三件麻烦事
 
@@ -75,39 +82,37 @@ int stack_pop(struct Stack *s, int *out) {
 `top` 与 `data` 必须一致——这正是「栈」这个数据结构的意思。
 但它们是 `struct` 的普通成员，**任何一个拿到 `struct Stack` 的地方都能直接改**：
 
-`C`
+`C++`
 
-```c
-/* stack_c_broken.c    编译：gcc -std=c23 stack_c_broken.c -o stack_c_broken */
-#include <stdio.h>
+```cpp
+/* stack_broken.cpp    编译：g++ -std=c++17 stack_broken.cpp -o stack_broken */
+#include <cstdio>
 
-#define CAP 4
+struct Stack { int data[4]; int top; };
 
-struct Stack { int data[CAP]; int top; };
-
-void stack_init(struct Stack *s) { s->top = 0; }
-int stack_push(struct Stack *s, int v) {
-    if (s->top >= CAP) return 0;
+void stack_init(Stack *s) { s->top = 0; }
+int stack_push(Stack *s, int v) {
+    if (s->top >= 4) return 0;
     s->data[s->top++] = v;
     return 1;
 }
-int stack_pop(struct Stack *s, int *out) {
+int stack_pop(Stack *s, int *out) {
     if (s->top <= 0) return 0;
     *out = s->data[--s->top];
     return 1;
 }
 
-int main(void) {
-    struct Stack s = {0};
+int main() {
+    Stack s = {};
     stack_init(&s);
     stack_push(&s, 1);
     stack_push(&s, 2);
 
-    s.top = 3;                      /* 直接改内部字段：声称有三个元素 */
+    s.top = 3;                      // 直接改内部字段：声称有三个元素
 
     int v = -1;
     stack_pop(&s, &v);
-    printf("弹出的值是 %d\n", v);   /* 这个位置从来没被写过 */
+    std::printf("弹出的值是 %d\n", v);   // 这个位置从来没被写过
     return 0;
 }
 ```
@@ -119,7 +124,7 @@ int main(void) {
 弹出的值是 0
 ```
 
-**编译器帮不上忙。** `s.top = 3;` 是完全合法的 C——
+**编译器帮不上忙。** `s.top = 3;` 完全合法——
 `top` 就是一个 `int`，赋什么值都行。
 **能保证「栈顶位置与元素个数一致」的只有人的自觉**，
 而这正是所有这类 bug 的来源。
@@ -522,41 +527,62 @@ sizeof(ThreeInts) = 12
 
 # 附录 A 复现本章节实测
 
-## A.1 C 版栈：数据与操作分成两半
+## A.1 没有封装时：数据与操作分成两半
 
-`C`
+`C++`
 
-```c
-/* stack_c_broken.c */
-#include <stdio.h>
+```cpp
+/* stack_plain.cpp    编译：g++ -std=c++17 -c stack_plain.cpp -o stack_plain.o */
+#include <cstdio>
 
-#define CAP 4
+struct Stack { int data[4]; int top; };
 
-struct Stack { int data[CAP]; int top; };
+void stack_init(Stack *s) { s->top = 0; }
 
-void stack_init(struct Stack *s) { s->top = 0; }
-int stack_push(struct Stack *s, int v) {
-    if (s->top >= CAP) return 0;
+int stack_push(Stack *s, int v) {
+    if (s->top >= 4) return 0;
     s->data[s->top++] = v;
     return 1;
 }
-int stack_pop(struct Stack *s, int *out) {
+
+int stack_pop(Stack *s, int *out) {
+    if (s->top <= 0) return 0;
+    *out = s->data[--s->top];
+    return 1;
+}
+```
+
+`C++`
+
+```cpp
+/* stack_broken.cpp */
+#include <cstdio>
+
+struct Stack { int data[4]; int top; };
+
+void stack_init(Stack *s) { s->top = 0; }
+int stack_push(Stack *s, int v) {
+    if (s->top >= 4) return 0;
+    s->data[s->top++] = v;
+    return 1;
+}
+int stack_pop(Stack *s, int *out) {
     if (s->top <= 0) return 0;
     *out = s->data[--s->top];
     return 1;
 }
 
-int main(void) {
-    struct Stack s = {0};
+int main() {
+    Stack s = {};
     stack_init(&s);
     stack_push(&s, 1);
     stack_push(&s, 2);
 
-    s.top = 3;                      /* 直接改内部字段：声称有三个元素 */
+    s.top = 3;                      // 直接改内部字段：声称有三个元素
 
     int v = -1;
     stack_pop(&s, &v);
-    printf("弹出的值是 %d\n", v);
+    std::printf("弹出的值是 %d\n", v);
     return 0;
 }
 ```
@@ -564,7 +590,7 @@ int main(void) {
 `Bash`
 
 ```bash
-gcc -std=c23 -Wall stack_c_broken.c -o stack_c_broken && ./stack_c_broken
+g++ -std=c++17 -Wall stack_broken.cpp -o stack_broken && ./stack_broken
 ```
 
 ## A.2 C++ 版：从外面改私有成员
