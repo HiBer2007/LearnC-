@@ -124,7 +124,7 @@ gdb --batch -x j.gdb
 build\client.exe 127.0.0.1 3 4
 ```
 
-### 实测输出
+### 运行输出
 
 ```
 Windows 客户端:
