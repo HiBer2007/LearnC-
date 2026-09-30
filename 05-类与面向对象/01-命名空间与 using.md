@@ -290,6 +290,17 @@ p.get()         = 0
 | `Point::get` | `Point` 的 `get` | 成员函数定义在类外时（第 02 章展开） |
 | `::g` | **全局的 `g`** | 开头的 `::` 表示「从最外层开始找」 |
 
+`文档`
+
+> "The name of a class or namespace member or enumerator can be referred to after
+> the :: scope resolution operator (8.1) applied to a nested-name-specifier that
+> denotes its class, namespace, or enumeration."
+>
+> "A name prefixed by the unary scope operator :: (8.1) is looked up in global
+> scope, in the translation unit where it is used."
+>
+> —— N4659 §6.4.3/1、§6.4.3/4
+
 > [!WARNING]
 > **`::` 不是类专用的符号。**
 > 命名空间、嵌套命名空间、全局作用域、类的静态成员，用的都是它；
@@ -358,6 +369,16 @@ int Point::count = 5;                   // count 是 Point 的静态成员
 | `using namespace std;` | **整个命名空间的所有名字** | 小程序、示例；**头文件里不要写** |
 | `using Alias = T;` | 给类型起个别名 | 简写长类型名 |
 | `using Base::f;` | 把基类被隐藏的名字**引回派生类** | 继承（第 06 章） |
+
+`文档`
+
+> "Each using-declarator in a using-declaration introduces a set of declarations
+> into the declarative region in which the using-declaration appears."
+>
+> "A using-directive specifies that the names in the nominated namespace can be
+> used in the scope in which the using-directive appears after the using-directive."
+>
+> —— N4659 §10.3.3/1、§10.3.4/2
 
 > [!WARNING]
 > **`using std::printf;` 与 `using namespace std;` 只差一个 `namespace`，
@@ -467,6 +488,19 @@ e2_usingdecl.cpp:7:10: error: call of overloaded 'print()' is ambiguous
 | 引进来 | 一个名字 | 那个空间里**所有**名字 |
 | 会不会影响别人 | 不会 | 会——本文件里所有不加限定的名字都多了一批候选 |
 | 遇到同名 | 说明这两个名字确实冲突 | 可能只是恰好同名；空间里其余大量名字一并成为候选，从调用处无法察觉 |
+
+`文档`
+
+> "Two using-declarations may introduce functions with the same name and the same
+> parameter-type-list. If, for a call to an unqualified function name, function
+> overload resolution selects the functions introduced by such using-declarations,
+> the function call is ill-formed."
+>
+> "If a best viable function exists and is unique, overload resolution succeeds and
+> produces it as the result. Otherwise overload resolution fails and the invocation
+> is ill-formed."
+>
+> —— N4659 §10.3.3/14、§16.3/3
 
 > [!TIP]
 > **优先用 `using` 声明。**
@@ -590,6 +624,16 @@ handler(7)
 | 函数指针 | `typedef void (*Callback)(int);` | `using Callback = void (*)(int);` |
 | 函数指针数组 | `typedef void (*Handlers[4])(int);` | `using Handlers = void (*[4])(int);` |
 
+`文档`
+
+> "A typedef-name is thus a synonym for another type."
+>
+> "A typedef-name can also be introduced by an alias-declaration. ... Such a
+> typedef-name has the same semantics as if it were introduced by the typedef
+> specifier."
+>
+> —— N4659 §10.1.3/1、§10.1.3/2
+
 **读 `typedef` 时要先找到名字的位置**，读 `using` 时**名字永远在等号左边**。
 
 ---
@@ -685,6 +729,16 @@ static_type.cpp:2:1: error: a storage class can only be specified for objects an
 | 变量、函数 | 可以 | 可以 |
 | 类型（`struct`、`class`、`using` 别名） | **不行** | 可以 |
 | 模板 | **不行** | 可以 |
+
+`文档`
+
+> "A name having namespace scope (6.3.6) has internal linkage if it is the name of
+> ... a variable, function or function template that is explicitly declared static"
+>
+> "An unnamed namespace or a namespace declared directly or indirectly within an
+> unnamed namespace has internal linkage."
+>
+> —— N4659 §6.5/3.1、§6.5/4
 
 > [!TIP]
 > **优先用匿名命名空间，`static` 留给简单场合。**
@@ -1185,4 +1239,4 @@ int main() {
 | 《04-语法/09-结构体、联合体与 enum.md》第 3 节 | 相关：`enum` 与 `enum class`（`using enum` 是 C++20） |
 | 《05-类与面向对象/02-类是一种类型.md》第 1.4 小节 | **后续**：类与结构体、访问控制、成员函数与 `this`、成员函数定义在类外的写法 |
 | 《05-类与面向对象/03-构造与析构.md》 | **后续**：构造函数与析构函数 |
-| 【待补：05-类与面向对象/06-继承.md】 | **后续**：`using Base::f;` 与名字隐藏 |
+| 《05-类与面向对象/06-继承.md》第 4.3 小节 | **后续**：`using Base::f;` 与名字隐藏 |

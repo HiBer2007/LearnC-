@@ -181,6 +181,14 @@ void path_early_return(bool bad) {
 | 每个对象的析构恰好调用一次 | 对象只有一个，析构也只有一个入口 |
 | 析构顺序与构造顺序相反 | 《05-类与面向对象/03-构造与析构.md》第 3 节 |
 
+`文档`
+
+> "On exit from a scope (however accomplished), objects with automatic storage duration (6.7.3)
+> that have been constructed in that scope are destroyed in the reverse order of their
+> construction."
+>
+> —— N4659 §9.6/2
+
 第一条包含异常路径：栈展开会逐层析构已经构造好的对象
 （《04-语法/13-异常.md》第 2 节）。**这一条是 RAII 能覆盖异常路径的全部原因**，
 不需要为异常额外写任何代码。
@@ -207,7 +215,6 @@ void with_raii(int mode) {
 （g++ 13.3.0）。
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -236,7 +243,6 @@ RAII 不是语法糖，编译出来的东西有实际差别。把「手工 `new`
 `-O2` 下两个函数的字节数，`nm -S` 所得。下面是 `unique_ptr` 那一版的汇编：
 
 `实测数据`
-
 `Assembly`
 
 ```asm
@@ -312,7 +318,6 @@ RAII 版本在析构函数里调用一次 `delete`，两者编出来的指令几
 谈不上「销毁一个完整的对象」。那么已经拿到的资源怎么办？先看谁被析构：
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -367,7 +372,6 @@ private:
 ```
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -407,7 +411,6 @@ public:
 编译器直接给出警告，运行结果是终止：
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -457,7 +460,6 @@ terminate called after throwing an instance of 'std::runtime_error'
 ```
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -471,7 +473,6 @@ terminate called after throwing an instance of 'std::runtime_error'
 手里的指针已经指向一块被释放的内存。程序继续跑到 `a` 析构时，同一块内存被删第二次：
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -617,7 +618,6 @@ private:
 同一段逻辑放在三种结局下，看文件有没有被关掉：
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -671,7 +671,6 @@ private:
 异常路径上的顺序值得留意：
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -701,7 +700,6 @@ private:
 | 引用计数的变化 | 从 `1` 到 `2`，再到最后一个引用消失时析构 |
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -721,7 +719,6 @@ shared_ptr 的引用计数：
 两个对象互相持有对方的 `shared_ptr`，计数就永远降不到零：
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -731,7 +728,6 @@ shared_ptr 的引用计数：
 ```
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -883,7 +879,6 @@ gcc -std=c23 leak_paths.c -o leak_paths
 ```
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -966,7 +961,6 @@ int main() {
 ```
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -1363,7 +1357,6 @@ nm -S --size-sort overhead.o            # 两个函数的字节数
 ```
 
 `实测数据`
-
 `Text`
 
 ```text
@@ -1548,6 +1541,6 @@ int main() {
 | 《04-语法/06-控制流语句.md》第 4.2 小节 | 相关：`goto` 与集中释放 |
 | 《04-语法/08-数组、指针与引用.md》第 5.4 小节 | 相关：本机 MinGW 没有 AddressSanitizer |
 | 《04-语法/13-异常.md》第 5.1 小节 | 相关：不抛异常时的代价 |
-| 【待补：05-类与面向对象/06-继承.md】 | **后续**：基类与派生类的构造析构顺序 |
-| 【待补：05-类与面向对象/07-多态：重载、虚函数与它们的分工.md】 | **后续**：虚析构——通过基类指针删除派生类对象 |
+| 《05-类与面向对象/06-继承.md》第 3.1 小节 | **后续**：基类与派生类的构造析构顺序 |
+| 《05-类与面向对象/07-多态：重载、虚函数与它们的分工.md》第 3.5 小节 | **后续**：虚析构——通过基类指针删除派生类对象 |
 | 【待补：06-标准库/】 | **后续**：`unique_ptr`、`shared_ptr` 的用法、删除器与选择 |
