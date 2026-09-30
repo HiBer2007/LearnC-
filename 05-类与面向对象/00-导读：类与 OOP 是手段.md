@@ -1,0 +1,785 @@
+# 导读：类与 OOP 是手段
+
+> **授权**：本章节属教材文档部分，采用 [CC BY-NC-ND 4.0](../LICENSE)
+> 加[附加条款](../许可附加条款.md)授权：署名、非商业、禁止演绎、不允许二次分发。
+> 文中引用的代码不受此限，各自保留原有许可证，详见[版权与许可说明.md](../版权与许可说明.md)。
+
+**这一板块讲的全是 C++ 独有的东西。**
+
+类、构造与析构、拷贝与移动、运算符重载、继承与多态、模板、lambda——
+**这些在 C 里都没有对应物**。第四板块里反复出现的那些「C 与 C++ 的分歧」，
+大多是在为这里铺路：引用是为了传参不拷贝，`const` 成员是为了让接口说清自己改不改对象，
+`namespace` 是为了让名字能重名，异常是为了让构造函数能报告失败。
+**这一板块是那些铺垫要去的地方。**
+
+**而在写第一个类之前，有一件事要先摆正：类与 OOP 从来不是目标，它们是手段。**
+
+---
+
+> **约定**：标注以行内代码单独成行——`实测数据` 表示实际执行验证过，
+> 完整源码与复现命令见附录 A；`文档` 表示引自标准或官方资料；
+> `待确认` 表示尚未验证。路径占位符（如 `<MinGW>`、`<工作区>`）的含义见《README.md》。
+
+# 本章节定位
+
+| 问题 | 在哪一节 |
+|---|---|
+| 没有类的时候，代码会卡在哪 | 一 |
+| **封装到底换来了什么** | **二** |
+| 类是什么，对象是什么 | 三 |
+| 「面向对象」这四个字该怎么摆 | 四 |
+| 这一板块与其它板块的分工 | 五 |
+
+---
+
+# 第 1 节 类解决的问题
+
+## 1.1 没有类的时候怎么写
+
+**栈是一个合适的例子**：它有一组数据（元素与栈顶位置），
+有一组操作（入栈、出栈），而且**两者必须保持一致**。
+
+用 C 写，就是第四板块里已经熟悉的样子——结构体加一组函数：
+
+`C`
+
+```c
+/* stack_c.c    编译：gcc -std=c23 -c stack_c.c -o stack_c.o（这里只有数据与函数，完整的程序见第 1.2 小节） */
+#include <stdio.h>
+
+#define CAP 4
+
+struct Stack { int data[CAP]; int top; };   /* 内部状态全摆在外面 */
+
+void stack_init(struct Stack *s) { s->top = 0; }
+
+int stack_push(struct Stack *s, int v) {
+    if (s->top >= CAP) return 0;
+    s->data[s->top++] = v;
+    return 1;
+}
+
+int stack_pop(struct Stack *s, int *out) {
+    if (s->top <= 0) return 0;
+    *out = s->data[--s->top];
+    return 1;
+}
+```
+
+**这份代码没有错**，它也能跑（把上面这三段存成 `stack_c.c`，再配一个 `main`，就是完整的程序）。麻烦在别处。
+
+## 1.2 三件麻烦事
+
+**第一件：内部状态谁都能改。**
+
+`top` 与 `data` 必须一致——这正是「栈」这个数据结构的意思。
+但它们是 `struct` 的普通成员，**任何一个拿到 `struct Stack` 的地方都能直接改**：
+
+`C`
+
+```c
+/* stack_c_broken.c    编译：gcc -std=c23 stack_c_broken.c -o stack_c_broken */
+#include <stdio.h>
+
+#define CAP 4
+
+struct Stack { int data[CAP]; int top; };
+
+void stack_init(struct Stack *s) { s->top = 0; }
+int stack_push(struct Stack *s, int v) {
+    if (s->top >= CAP) return 0;
+    s->data[s->top++] = v;
+    return 1;
+}
+int stack_pop(struct Stack *s, int *out) {
+    if (s->top <= 0) return 0;
+    *out = s->data[--s->top];
+    return 1;
+}
+
+int main(void) {
+    struct Stack s = {0};
+    stack_init(&s);
+    stack_push(&s, 1);
+    stack_push(&s, 2);
+
+    s.top = 3;                      /* 直接改内部字段：声称有三个元素 */
+
+    int v = -1;
+    stack_pop(&s, &v);
+    printf("弹出的值是 %d\n", v);   /* 这个位置从来没被写过 */
+    return 0;
+}
+```
+
+`实测数据`
+`Text`
+
+```text
+弹出的值是 0
+```
+
+**编译器帮不上忙。** `s.top = 3;` 是完全合法的 C——
+`top` 就是一个 `int`，赋什么值都行。
+**能保证「栈顶位置与元素个数一致」的只有人的自觉**，
+而这正是所有这类 bug 的来源。
+
+**第二件：换实现要动所有调用方。**
+
+假设要把固定数组换成链表（因为栈需要长得更大）。
+`struct Stack` 里的 `data` 与 `top` 要换掉，于是**所有直接碰过这两个字段的代码都要改**。
+就算改的是函数里的实现，只要签名变了，调用方也要跟着改。
+
+**第三件：复用只能靠复制。**
+
+第二处要用栈，只能把这份代码复制过去、改个名字。
+**改一次要改两处**，两处迟早会不一致。
+
+## 1.3 类做的事：把数据与操作它的函数捆在一起，并规定谁能碰
+
+C++ 给的答案是把这两半合成一个东西，**并在外面加一道门**：
+
+`C++`
+
+```cpp
+// stack.h    接口：只有它会被调用方看到
+#pragma once
+
+class Stack {
+public:                             // 门外的部分：谁都能用
+    Stack();
+    ~Stack();
+    void push(int v);
+    bool pop(int &out);
+    int  size() const;
+private:                            // 门里的部分：只有 Stack 自己能用
+    struct Impl;                    // 实现细节连名字都不暴露
+    Impl *impl_;
+};
+```
+
+**调用方看到的就是这五件事**，看不到 `Impl` 里到底放了什么。
+于是第 1.2 节的三件麻烦事各有一处着落：
+
+| 麻烦 | 类带来的变化 |
+|---|---|
+| 内部状态谁都能改 | 放进 `private`，**从外面写它就是编译错误** |
+| 换实现要动调用方 | 调用方只认那五个名字；内部换成数组或链表，它都不知道 |
+| 复用只能靠复制 | 一份接口可以给多处用，实现只有一份 |
+
+**「从外面写它就是编译错误」这句话是实测过的**：
+
+`实测数据`
+`C++`
+
+```cpp
+// stack_cpp_bad.cpp    编译：g++ -std=c++17 stack_cpp_bad.cpp -o stack_cpp_bad （失败）
+class Stack {
+    int data_[4] = {0};
+    int top_ = 0;                   // 默认私有
+};
+
+int main() {
+    Stack s;
+    s.top_ = 3;                     // 试图从外面改
+    return 0;
+}
+```
+
+`实测数据`
+`Text`
+
+```text
+error: 'int Stack::top_' is private within this context
+```
+
+**同一个赋值，在 C 里合法、在 C++ 里编译不过**——
+区别只在于那个成员在不在 `private` 里。
+
+> [!IMPORTANT]
+> **封装不是一个新概念，而是一种新的组织方式**：
+> 把「数据」与「操作这些数据的函数」放进同一个名字底下，再规定外面能看见哪些。
+> **类与 OOP 的价值都从这一条长出来**——后面所有的语法，
+> 构造析构也好、继承虚函数也好，都是在回答「这样捆起来之后，随之而来的问题怎么处理」。
+
+---
+
+# 第 2 节 封装换来的四件事
+
+## 2.1 一套标准接口
+
+外部只需要知道 `push`、`pop`、`size` 这三个动作**叫什么、收什么、返回什么**，
+不需要知道栈是数组还是链表、容量多大、元素放在哪。
+
+**这就是「按一套标准接口使用组件」的字面意思**：
+接口是一份约定，约定之外的细节都属于实现。
+
+## 2.2 解耦：调用方不需要知道实现
+
+`stack.h` 里那一行 `struct Impl;` 只声明了「有这么个东西」，
+**没有给出它的任何细节**。因此：
+
+- 调用方的源码里**不出现**数组、链表、节点这些词；
+- 实现文件里怎么改，都不会让调用方重新编译出错误；
+- 两个人可以同时干活——一个写调用方，一个写实现，中间只靠这份头文件对接。
+
+## 2.3 实现可以替换，而调用方一个字都不用改
+
+这是封装最实在的一条好处，可以直接验：
+
+`C++`
+
+```cpp
+// use_stack.cpp    调用方：下面两版实现共用这一份源码
+#include <cstdio>
+#include "stack.h"
+
+int main() {
+    Stack s;
+    s.push(1);
+    s.push(2);
+    s.push(3);
+    int v = 0;
+    while (s.pop(v)) std::printf("%d ", v);
+    std::printf("| size = %d\n", s.size());
+    return 0;
+}
+```
+
+`实测数据`
+`Bash`
+
+```bash
+g++ -std=c++17 use_stack.cpp stack_array.cpp -o use_array    # 数组实现
+g++ -std=c++17 use_stack.cpp stack_list.cpp  -o use_list     # 链表实现
+./use_array
+./use_list
+```
+
+`实测数据`
+`Text`
+
+```text
+3 2 1 | size = 0
+3 2 1 | size = 0
+```
+
+**两次链接用的是同一份 `use_stack.cpp`（源码哈希相同），输出也完全相同。**
+两个实现文件里，一个是定长数组、一个是带 `new`/`delete` 的链表，
+**调用方对此一无所知，也不需要知道**。
+
+> [!IMPORTANT]
+> **「实现可以换」这件事，是靠接口与实现分离换来的。**
+> 只要那五个名字与签名不变，实现换成什么样子，调用方都不受影响。
+> **反过来，一旦接口暴露了实现（比如让调用方拿到数组指针），这条好处立刻消失。**
+
+## 2.4 复用才有基础
+
+**复用的前提是「有一份稳定的东西可以被反复使用」。**
+封装恰好提供了这份东西：**接口稳定，实现可以变**。
+
+于是复用的形态从「把代码复制过去」变成了「把接口拿过去用」：
+
+| 复用方式 | 代价 |
+|---|---|
+| 复制代码 | 每一份都要单独维护，改一处要改多处 |
+| 复制接口、共用实现 | 实现只有一份，修一次全体受益 |
+| 复制接口、各写实现 | 约定一致，实现可以按场景优化 |
+
+## 2.5 封装的代价
+
+**封装不是免费的**，这一点同样要说清：
+
+| 代价 | 说明 |
+|---|---|
+| 多了一层间接 | 调用方要经过接口才能碰到数据；`private` 让某些写法变成编译错误 |
+| 样板代码 | 声明、定义、构造、析构，都要写 |
+| 编译依赖 | 头文件里的改动会让所有包含它的源文件重编 |
+| 运行期开销 | 只有虚函数才有（一次查表跳转），普通成员函数没有，见第 07 章 |
+
+**判断标准仍然只有一个：这样做省下的麻烦，是否多于它引入的麻烦。**
+一个只有两个 `int` 的坐标点，给它设计五层接口，省下的远少于引入的。
+
+---
+
+# 第 3 节 类是一种类型，对象是数据加操作
+
+## 3.1 类是一种类型
+
+**「类是一种类型」不是修辞，是一个字面事实**：
+凡是类型能出现的地方，类都能出现。
+
+`C++`
+
+```cpp
+// is_a_type.cpp    编译：g++ -std=c++17 is_a_type.cpp -o is_a_type
+#include <cstdio>
+#include <typeinfo>
+
+class Point {
+public:
+    Point(int x, int y) : x_(x), y_(y) {}
+    int   sum() const { return x_ + y_; }                        // 不修改对象
+    Point shifted(int d) const { return Point(x_ + d, y_ + d); } // 返回同类对象
+private:
+    int x_, y_;
+};
+
+int take(Point p) { return p.sum(); }        // 当参数类型用
+
+int main() {
+    Point p(1, 2);                           // 当变量类型用
+    const Point q(3, 4);                     // 能有 const 对象
+    std::printf("typeid(p).name() = %s\n", typeid(p).name());
+    std::printf("sizeof(Point)    = %zu\n", sizeof(Point));
+    std::printf("p.sum()          = %d\n", p.sum());
+    std::printf("q.sum()          = %d\n", q.sum());
+    std::printf("take(p)          = %d\n", take(p));
+    std::printf("p.shifted(10).sum() = %d\n", p.shifted(10).sum());
+    return 0;
+}
+```
+
+`实测数据`
+`Text`
+
+```text
+typeid(p).name() = 5Point
+sizeof(Point)    = 8
+p.sum()          = 3
+q.sum()          = 7
+take(p)          = 3
+p.shifted(10).sum() = 23
+```
+
+`sizeof(Point)` 是 8——两个 `int`，**与「有两个 `int` 的结构体」量不出区别**；
+`typeid` 能报出它的名字；它还能有 `const` 对象、能当参数、能当返回值。
+
+**把类当类型看，后面几件事就顺了**：
+
+| 现象 | 因为类是一种类型，所以…… |
+|---|---|
+| 类能有 `const` 对象 | 与 `const int` 同源：不能通过它修改对象 |
+| 类能做模板参数 | 模板本来就是「对类型做参数化」 |
+| 类能重载运算符 | 运算符本来就是为类型准备的操作 |
+| 类的名字能参与重载决议 | 与基本类型、指针一样是类型系统里的一员 |
+
+## 3.2 对象是「数据 + 可对它执行的操作」的复合
+
+**先看四个数字**：
+
+`实测数据`
+`C++`
+
+```cpp
+// sizeof_class.cpp    编译：g++ -std=c++17 sizeof_class.cpp -o sizeof_class
+#include <cstdio>
+
+struct Empty { };                                  // 空类
+struct WithFuncs {                                 // 只有成员函数
+    int add(int a, int b) { return a + b; }
+    int sub(int a, int b);
+    static int mul(int a, int b) { return a * b; }
+};
+int WithFuncs::sub(int a, int b) { return a - b; }
+
+struct WithData  { int x; };                       // 一个数据成员
+struct ThreeInts { int x, y, z; };                 // 三个数据成员
+
+int main() {
+    std::printf("sizeof(Empty)     = %zu\n", sizeof(Empty));
+    std::printf("sizeof(WithFuncs) = %zu\n", sizeof(WithFuncs));
+    std::printf("sizeof(WithData)  = %zu\n", sizeof(WithData));
+    std::printf("sizeof(ThreeInts) = %zu\n", sizeof(ThreeInts));
+    return 0;
+}
+```
+
+`实测数据`
+`Text`
+
+```text
+sizeof(Empty)     = 1
+sizeof(WithFuncs) = 1
+sizeof(WithData)  = 4
+sizeof(ThreeInts) = 12
+```
+
+**两个结论直接摆在数字里**：
+
+- **成员函数不占对象的空间**。`WithFuncs` 里有两个普通成员函数和一个静态成员函数，
+  `sizeof` 仍然是 1——**函数属于类，不属于某一个对象**；
+- **占空间的只有数据成员**。`Empty` 的 1 字节不是数据，是为了让每个对象有唯一的地址。
+
+**所以「对象」在内存里就是一块数据**（这里 4 字节、12 字节），
+而**「可对它执行的操作」是编译期挂在类型上的**，一个字节都不占。
+
+**这一点值得记住，因为它解释了后面很多设计的取舍**：
+把函数放进类里之所以不增加成本，正是因为它不在对象里；
+而虚函数之所以有成本，正是因为它**必须在对象里存一个指针**（见第 07 章）。
+
+---
+
+# 第 4 节 「面向对象」这四个字
+
+## 4.1 它是手段，不是信仰
+
+**「面向对象」听起来像一种更高级的编程方式，它不是。**
+
+**它是一个组织手段，只在特定形状的问题上划算**：
+当程序里有一批数据必须一起维护、并且存在「不能被随便破坏的状态」时，
+把数据与操作捆起来、再规定谁能碰，就能把这批状态的责任收在一处。
+**问题不满足这个形状，这套手段就没用。**
+
+因此下面这些说法都不成立：
+
+| 说法 | 实际情况 |
+|---|---|
+| 「一切都应该是对象」 | C++ 里基本类型、函数、模板都不是对象 |
+| 「面向对象比面向过程高级」 | 两者解决的问题不同，同一份程序里常常混用 |
+| 「不用类就不算好代码」 | 一个坐标点用 `struct` 就够，硬套接口只会让人多绕路 |
+| 「继承越多越面向对象」 | 继承是最容易被滥用的手段，见第 06 章 |
+
+**把它当成一个道具**：需要时取用，不需要时放下；
+不合手时可以改（C++ 允许你重载运算符、改写拷贝行为、自己管内存），
+**它没有神圣之处**。
+
+## 4.2 什么时候值得用一个类
+
+`实测数据`
+
+| 情形 | 例子 |
+|---|---|
+| 有一组数据必须一起维护，且有「不变量」 | 栈的 `top` 与 `data` 必须一致 |
+| 有多套实现需要能互换 | 同一个栈，数组版与链表版 |
+| 有资源要成对地获取与释放 | 文件、锁、内存（第 05 章 RAII） |
+| 有一批操作天然属于同一个名字 | `Stack::push`、`Point::shift` |
+
+**反过来，这些情形不必用类**：
+
+| 情形 | 用什么 |
+|---|---|
+| 纯粹的数据打包，没有需要守住的约束 | `struct`（见《04-语法/09-结构体、联合体与 enum.md》第 1 节） |
+| 只有一两个动作，没有内部状态 | 普通函数 |
+| 同一份逻辑要对多种类型用 | 模板，不是类（第 10、11 章） |
+| 只是要把一件事推迟到以后做 | lambda，不是类（第 09 章） |
+
+## 4.3 手段不止一种
+
+**C++ 里解决问题的手段有好几种，它们在同一份代码里共存**：
+
+| 手段 | 适合什么 | 在哪讲 |
+|---|---|---|
+| 过程式（函数 + 数据） | 步骤清晰的算法 | 第四板块 |
+| 泛型（模板） | 同一份逻辑对多种类型用 | 第 10、11 章 |
+| 面向对象（类 + 继承 + 虚函数） | 运行期需要替换实现 | 第 06、07 章 |
+| 函数式（lambda、算法） | 把「做什么」当参数传进来 | 第 09 章 |
+
+**不是非此即彼。** 一个真实的 C++ 程序里，这四种写法常常同时出现在一个文件里，
+**选择的标准是哪一个更直接，而不是哪一个更「现代」。**
+
+## 4.4 一个先记住的倾向
+
+**组合优于继承。**
+
+继承是最容易被滥用的手段：它把两个类的实现绑在一起，
+基类一改，派生类可能就坏。**能用「有一个」解决的事，不要用「是一个」。**
+这一条在第 06 章展开。
+
+---
+
+# 第 5 节 这一板块与其它板块的分工
+
+| 内容 | 在哪 |
+|---|---|
+| 类、构造析构、拷贝移动、运算符重载、继承多态、模板、lambda | **本板块** |
+| `std::string`、智能指针、`std::function`、输入输出、时间、文件系统 | 【待补：06-标准库/】 |
+| STL 容器、迭代器、算法 | 【待补：08-高阶数据结构/】 |
+| 虚函数表的二进制布局、名字修饰规则、对象内存布局 | 【待补：07-更底层/】 |
+| `constexpr`、`static_assert`、编译期计算 | 《04-语法/12-编译期能力.md》 |
+| `const` 的完整语义 | 《04-语法/03-常量与 const.md》 |
+| 异常与栈展开 | 《04-语法/13-异常.md》 |
+
+**本板块只讲「有虚表、虚表里存什么」这一层**，
+虚表在二进制里怎么排、名字怎么修饰，归 `07-更底层`。
+
+---
+
+# 相邻节点
+
+| 关系 | 文档 |
+|---|---|
+| **前置**：结构体与 `struct` | 《04-语法/09-结构体、联合体与 enum.md》第 1 节 |
+| **前置**：引用 | 《04-语法/08-数组、指针与引用.md》第 3 节 |
+| **前置**：函数与重载 | 《04-语法/07-函数.md》第 5 节 |
+| **前置**：`const` 的语义 | 《04-语法/03-常量与 const.md》第 2 节 |
+| **前置**：生存期与 `static` | 《04-语法/11-作用域、生存期与链接.md》第 3 节 |
+| **前置**：异常与栈展开 | 《04-语法/13-异常.md》第 2 节 |
+| **前置**：读法与本教材的立场 | 《04-语法/00-导读：从记住规则到理解意图.md》 |
+| **后续**：`std::string`、智能指针 | 【待补：06-标准库/】 |
+| **后续**：容器、迭代器、算法 | 【待补：08-高阶数据结构/】 |
+| **后续**：ABI、名字修饰、编译器扩展 | 【待补：07-更底层/】 |
+
+---
+
+# 附录 A 复现本章节实测
+
+## A.1 C 版栈：数据与操作分成两半
+
+`C`
+
+```c
+/* stack_c_broken.c */
+#include <stdio.h>
+
+#define CAP 4
+
+struct Stack { int data[CAP]; int top; };
+
+void stack_init(struct Stack *s) { s->top = 0; }
+int stack_push(struct Stack *s, int v) {
+    if (s->top >= CAP) return 0;
+    s->data[s->top++] = v;
+    return 1;
+}
+int stack_pop(struct Stack *s, int *out) {
+    if (s->top <= 0) return 0;
+    *out = s->data[--s->top];
+    return 1;
+}
+
+int main(void) {
+    struct Stack s = {0};
+    stack_init(&s);
+    stack_push(&s, 1);
+    stack_push(&s, 2);
+
+    s.top = 3;                      /* 直接改内部字段：声称有三个元素 */
+
+    int v = -1;
+    stack_pop(&s, &v);
+    printf("弹出的值是 %d\n", v);
+    return 0;
+}
+```
+
+`Bash`
+
+```bash
+gcc -std=c23 -Wall stack_c_broken.c -o stack_c_broken && ./stack_c_broken
+```
+
+## A.2 C++ 版：从外面改私有成员
+
+`C++`
+
+```cpp
+/* stack_cpp_bad.cpp    编译：g++ -std=c++17 stack_cpp_bad.cpp -o stack_cpp_bad （失败） */
+class Stack {
+    int data_[4] = {0};
+    int top_ = 0;                   // 默认私有
+};
+
+int main() {
+    Stack s;
+    s.top_ = 3;
+    return 0;
+}
+```
+
+## A.3 同一份调用方，两版实现
+
+`C++`
+
+```cpp
+/* stack.h    编译：g++ -std=c++17 -c stack.h -o stack_h.o */
+#pragma once
+
+class Stack {
+public:
+    Stack();
+    ~Stack();
+    void push(int v);
+    bool pop(int &out);
+    int  size() const;
+private:
+    struct Impl;
+    Impl *impl_;
+};
+```
+
+`C++`
+
+```cpp
+/* stack_array.cpp    编译：g++ -std=c++17 -c stack_array.cpp -o stack_array.o */
+#include "stack.h"
+
+struct Stack::Impl {
+    int data[8];
+    int top = 0;
+};
+
+Stack::Stack() : impl_(new Impl) {}
+Stack::~Stack() { delete impl_; }
+
+void Stack::push(int v) { if (impl_->top < 8) impl_->data[impl_->top++] = v; }
+bool Stack::pop(int &out) {
+    if (impl_->top <= 0) return false;
+    out = impl_->data[--impl_->top];
+    return true;
+}
+int Stack::size() const { return impl_->top; }
+```
+
+`C++`
+
+```cpp
+/* stack_list.cpp    编译：g++ -std=c++17 -c stack_list.cpp -o stack_list.o */
+#include "stack.h"
+
+struct Stack::Impl {
+    struct Node { int v; Node *next; };
+    Node *head = nullptr;
+    int n = 0;
+};
+
+Stack::Stack() : impl_(new Impl) {}
+Stack::~Stack() {
+    while (impl_->head) {
+        Impl::Node *p = impl_->head;
+        impl_->head = p->next;
+        delete p;
+    }
+    delete impl_;
+}
+
+void Stack::push(int v) {
+    impl_->head = new Impl::Node{v, impl_->head};
+    ++impl_->n;
+}
+bool Stack::pop(int &out) {
+    if (!impl_->head) return false;
+    Impl::Node *p = impl_->head;
+    out = p->v;
+    impl_->head = p->next;
+    delete p;
+    --impl_->n;
+    return true;
+}
+int Stack::size() const { return impl_->n; }
+```
+
+`C++`
+
+```cpp
+/* use_stack.cpp    编译：g++ -std=c++17 -c use_stack.cpp -o use_stack.o */
+#include <cstdio>
+#include "stack.h"
+
+int main() {
+    Stack s;
+    s.push(1);
+    s.push(2);
+    s.push(3);
+    int v = 0;
+    while (s.pop(v)) std::printf("%d ", v);
+    std::printf("| size = %d\n", s.size());
+    return 0;
+}
+```
+
+`Bash`
+
+```bash
+g++ -std=c++17 use_stack.cpp stack_array.cpp -o use_array && ./use_array
+g++ -std=c++17 use_stack.cpp stack_list.cpp  -o use_list  && ./use_list
+```
+
+`实测数据`
+`Text`
+
+```text
+3 2 1 | size = 0
+3 2 1 | size = 0
+```
+
+**两次用的 `use_stack.cpp` 是同一份**（源码 SHA-256 相同），
+差别只在链接时给了哪个实现文件。
+
+## A.4 成员函数不占对象空间
+
+`C++`
+
+```cpp
+/* sizeof_class.cpp */
+#include <cstdio>
+
+struct Empty { };
+struct WithFuncs {
+    int add(int a, int b) { return a + b; }
+    int sub(int a, int b);
+    static int mul(int a, int b) { return a * b; }
+};
+int WithFuncs::sub(int a, int b) { return a - b; }
+
+struct WithData  { int x; };
+struct ThreeInts { int x, y, z; };
+
+int main() {
+    std::printf("sizeof(Empty)     = %zu\n", sizeof(Empty));
+    std::printf("sizeof(WithFuncs) = %zu\n", sizeof(WithFuncs));
+    std::printf("sizeof(WithData)  = %zu\n", sizeof(WithData));
+    std::printf("sizeof(ThreeInts) = %zu\n", sizeof(ThreeInts));
+    return 0;
+}
+```
+
+## A.5 类是一种类型
+
+`C++`
+
+```cpp
+/* is_a_type.cpp */
+#include <cstdio>
+#include <typeinfo>
+
+class Point {
+public:
+    Point(int x, int y) : x_(x), y_(y) {}
+    int   sum() const { return x_ + y_; }
+    Point shifted(int d) const { return Point(x_ + d, y_ + d); }
+private:
+    int x_, y_;
+};
+
+int take(Point p) { return p.sum(); }
+
+int main() {
+    Point p(1, 2);
+    const Point q(3, 4);
+    std::printf("typeid(p).name() = %s\n", typeid(p).name());
+    std::printf("sizeof(Point)    = %zu\n", sizeof(Point));
+    std::printf("p.sum()          = %d\n", p.sum());
+    std::printf("q.sum()          = %d\n", q.sum());
+    std::printf("take(p)          = %d\n", take(p));
+    std::printf("p.shifted(10).sum() = %d\n", p.shifted(10).sum());
+    return 0;
+}
+```
+
+---
+
+# 附录 B 相关文档
+
+| 文档 | 关系 |
+|---|---|
+| 《04-语法/00-导读：从记住规则到理解意图.md》 | **前置**：本教材的读法与立场 |
+| 《04-语法/09-结构体、联合体与 enum.md》第 1 节 | **前置**：结构体是类的直接前身 |
+| 《04-语法/08-数组、指针与引用.md》第 3 节 | **前置**：引用（成员函数与传参都要用） |
+| 《04-语法/07-函数.md》第 5 节 | **前置**：函数与重载 |
+| 《04-语法/03-常量与 const.md》第 2 节 | **前置**：`const` 的语义（`const` 对象、`const` 成员函数） |
+| 《04-语法/11-作用域、生存期与链接.md》第 3 节 | **前置**：生存期（构造与析构要对上它） |
+| 《04-语法/13-异常.md》第 2 节 | **前置**：栈展开（析构函数在异常里的角色） |
+| 【待补：06-标准库/】 | **后续**：`std::string`、智能指针、`std::function` |
+| 【待补：08-高阶数据结构/】 | **后续**：容器、迭代器、算法 |
+| 【待补：07-更底层/】 | **后续**：ABI、名字修饰、对象布局 |
