@@ -38,7 +38,7 @@
 
 ## 建议阅读顺序
 
-<small style="color:gray">text</small>
+`Text`
 
 ```text
 先看本板块怎么读                      00              ← 必读
@@ -86,7 +86,7 @@
 **下图是各章节之间的实际依赖。**
 **箭头表示「讲清 A 需要先懂 B」。**
 
-<small style="color:gray">text</small>
+`Text`
 
 ```text
                           01 语法糖 / 值语义 / 未定义行为

@@ -30,7 +30,7 @@
 
 ## 建议阅读顺序
 
-<small style="color:gray">text</small>
+`Text`
 
 ```text
 先弄清语言与实现    00-语言的实现

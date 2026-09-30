@@ -21,7 +21,7 @@
 
 ## 建议阅读顺序
 
-<small style="color:gray">text</small>
+`Text`
 
 ```text
 先弄清为什么要用构建工具        01 第 1 节

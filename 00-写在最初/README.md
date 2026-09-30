@@ -18,7 +18,7 @@
 
 ## 建议阅读顺序
 
-<small style="color:gray">text</small>
+`Text`
 
 ```text
 00-写在最初/01-C与C++.md            弄清 C 与 C++ 的关系

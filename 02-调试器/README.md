@@ -16,7 +16,7 @@
 
 ## 建议阅读顺序
 
-<small style="color:gray">text</small>
+`Text`
 
 ```text
 先看本机能用什么      00-本机环境与路线

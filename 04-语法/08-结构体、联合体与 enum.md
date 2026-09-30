@@ -42,7 +42,7 @@
 
 ## 1.1 定义与使用
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* struct_basic.c    编译：gcc -std=c23 struct_basic.c -o struct_basic */
@@ -70,14 +70,14 @@ int main(void) {
 
 **这是两种语言在写法上最显眼的差别之一。**
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 struct Point p = { 1, 2 };      /* C：必须写 struct */
 Point p = { 1, 2 };             /* C：编译失败 */
 ```
 
-<small style="color:gray">cpp</small>
+`C++`
 
 ```cpp
 Point p = { 1, 2 };             // C++：直接写类型名
@@ -94,7 +94,7 @@ Point p = { 1, 2 };             // C++：直接写类型名
 
 **在 C 里想省掉 `struct`，用 `typedef`**：
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 typedef struct Point {
@@ -110,7 +110,7 @@ Point p = { 1, 2 };         /* 可以这样写了 */
 
 ## 1.3 整体赋值可以，整体比较不行
 
-<small style="color:gray">实测数据</small>
+`实测数据`
 
 | 操作 | C23 | C++17 |
 |---|---|---|
@@ -132,7 +132,7 @@ Point p = { 1, 2 };         /* 可以这样写了 */
 
 ## 1.4 `.` 与 `->`
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* arrow.c    编译：gcc -std=c23 arrow.c -o arrow */
@@ -163,7 +163,7 @@ int main(void) {
 **这一条在《01-编译器/00-语言的实现.md》第 5.5 小节有完整推导，
 这里只给出实测数字。**
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* padding.c    编译：gcc -std=c23 padding.c -o padding */
@@ -184,8 +184,8 @@ int main(void) {
 
 **实测输出**：
 
-<small style="color:gray">实测数据</small>
-<small style="color:gray">text</small>
+`实测数据`
+`Text`
 
 ```text
 struct A { char; int; char; } = 12 字节
@@ -195,7 +195,7 @@ A 各成员偏移: c=0 i=4 d=8
 
 **成员完全相同，只是换了顺序，就差 4 字节。**
 
-<small style="color:gray">text</small>
+`Text`
 
 ```
    struct A                          struct B
@@ -217,7 +217,7 @@ A 各成员偏移: c=0 i=4 d=8
 
 ## 2.1 成员共享同一块内存
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* union_basic.c    编译：gcc -std=c23 union_basic.c -o union_basic */
@@ -246,8 +246,8 @@ int main(void) {
 
 **实测输出**：
 
-<small style="color:gray">实测数据</small>
-<small style="color:gray">text</small>
+`实测数据`
+`Text`
 
 ```text
 sizeof(union U) = 4  （取最大的成员）
@@ -272,7 +272,7 @@ v.f = 1 时 v.u = 0x3F800000   （浮点的位模式）
 
 **用途一：让同一块内存有多种解释。**
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 union {
@@ -283,7 +283,7 @@ union {
 
 **用途二：节省空间——同一时刻只会用到其中一个成员。**
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 struct Value {
@@ -306,7 +306,7 @@ struct Value {
 
 **成员可以直接访问，不用写中间那层名字。**
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* anonymous.c    编译：gcc -std=c23 anonymous.c -o anonymous */
@@ -339,7 +339,7 @@ int main(void) {
 
 **给一组整数起名字。**
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* enum_basic.c    编译：gcc -std=c23 enum_basic.c -o enum_basic */
@@ -359,7 +359,7 @@ int main(void) {
 
 **可以指定值**：
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 enum Status { OK = 200, NOT_FOUND = 404, ERROR = 500 };
@@ -368,7 +368,7 @@ enum Flags  { A = 1, B = 2, C = 4, D = 8 };     /* 当位标志用 */
 
 ## 3.2 C 与 C++ 的分歧
 
-<small style="color:gray">实测数据</small>
+`实测数据`
 
 | 写法 | C23 | C++17 |
 |---|---|---|
@@ -391,7 +391,7 @@ enum Flags  { A = 1, B = 2, C = 4, D = 8 };     /* 当位标志用 */
 
 **C++11 起提供了一个真正有约束的版本。**
 
-<small style="color:gray">cpp</small>
+`C++`
 
 ```cpp
 // enum_class.cpp    编译：g++ -std=c++17 enum_class.cpp -o enum_class
@@ -408,7 +408,7 @@ int main() {
 
 **实测**：
 
-<small style="color:gray">实测数据</small>
+`实测数据`
 
 | 写法 | 结果 |
 |---|---|
@@ -440,7 +440,7 @@ int main() {
 
 **在结构体里按「位」分配空间。**
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* bitfield.c    编译：gcc -std=c23 bitfield.c -o bitfield */
@@ -464,8 +464,8 @@ int main(void) {
 
 **实测输出**：
 
-<small style="color:gray">实测数据</small>
-<small style="color:gray">text</small>
+`实测数据`
+`Text`
 
 ```text
 sizeof(struct Flags) = 4
@@ -477,7 +477,7 @@ b 赋值 9 之后 = 1
 
 **第一，`sizeof` 是 4 而不是 1。** 位域的大小由**声明的类型**决定：
 
-<small style="color:gray">实测数据</small>
+`实测数据`
 
 | 声明 | 大小 |
 |---|---|
@@ -522,7 +522,7 @@ b 赋值 9 之后 = 1
 
 ## A.1 成员顺序对大小的影响
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* padding.c */
@@ -538,7 +538,7 @@ int main(void) {
 }
 ```
 
-<small style="color:gray">bash</small>
+`Bash`
 
 ```bash
 gcc -std=c23 padding.c -o padding && ./padding
@@ -548,7 +548,7 @@ gcc -std=c23 padding.c -o padding && ./padding
 
 ## A.2 联合体与字节序
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* union_bytes.c */
@@ -562,7 +562,7 @@ int main(void) {
 }
 ```
 
-<small style="color:gray">bash</small>
+`Bash`
 
 ```bash
 gcc -std=c23 union_bytes.c -o u && ./u
@@ -571,7 +571,7 @@ gcc -std=c23 union_bytes.c -o u && ./u
 
 ## A.3 `enum` 与 `enum class`
 
-<small style="color:gray">cpp</small>
+`C++`
 
 ```cpp
 // enum_diff.cpp
@@ -586,7 +586,7 @@ int main() {
 }
 ```
 
-<small style="color:gray">bash</small>
+`Bash`
 
 ```bash
 g++ -std=c++17 -c enum_diff.cpp -o e.o
@@ -595,7 +595,7 @@ gcc -std=c23 -c enum_diff.c -o e.o    # C 版：int 可以直接赋给枚举
 
 ## A.4 位域的大小与截断
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* bitfield.c */
@@ -611,7 +611,7 @@ int main(void) {
 }
 ```
 
-<small style="color:gray">bash</small>
+`Bash`
 
 ```bash
 gcc -std=c23 bitfield.c -o bf && ./bf
@@ -621,7 +621,7 @@ gcc -std=c23 bitfield.c -o bf && ./bf
 
 ## A.5 结构体不能整体比较
 
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* cmp.c */
@@ -632,7 +632,7 @@ int main(void) {
 }
 ```
 
-<small style="color:gray">bash</small>
+`Bash`
 
 ```bash
 gcc -std=c23 -c cmp.c -o c.o

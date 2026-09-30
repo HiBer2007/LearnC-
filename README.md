@@ -30,7 +30,7 @@ Windows 的资源管理器把数字排在字母前面，主线因此始终在最
 
 **初次阅读建议**：
 
-<small style="color:gray">text</small>
+`Text`
 
 ```
 01-编译器/01-编译与链接      →  弄清「为什么不能点一下运行」
@@ -48,9 +48,9 @@ Windows 的资源管理器把数字排在字母前面，主线因此始终在最
 
 ### 结论的依据怎么标
 
-文中每个技术结论都标了依据，**标注是表格或代码块上方的一行灰色小字**：
+文中每个技术结论都标了依据，**标注是表格或代码块上方的一行行内代码**：
 
-<small style="color:gray">text</small>
+`Text`
 
 ```
 实测数据    在编写环境中实际执行并验证过，输出可复现
@@ -59,6 +59,7 @@ Windows 的资源管理器把数字排在字母前面，主线因此始终在最
 ```
 
 **这三种标注只出现在被标注的对象正上方**，不写在句子中间。
+写法就是普通的行内代码，如 `` `实测数据` ``、`` `文档` ``、`` `待确认` ``。
 
 ### 提示与注意事项
 
@@ -75,12 +76,12 @@ Windows 的资源管理器把数字排在字母前面，主线因此始终在最
 ### 代码块的语言
 
 **GitHub 与 VS Code 的预览都不在代码块头部显示语言**，
-因此每个代码块上方也有一行灰色小字标明：
+因此每个代码块上方也有一行标明语言的标注：
 
-<small style="color:gray">markdown</small>
+`Markdown`
 
 ````markdown
-<small style="color:gray">c</small>
+`C`
 
 ```c
 /* width.c    编译：gcc -std=c23 width.c -o width */
@@ -89,8 +90,15 @@ int main(void) { return 0; }
 ```
 ````
 
-标签用英文，与围栏名一致：`c`、`cpp`、`powershell`、`bash`、`text`、
-`cmake`、`json`、`jsonc`、`asm` 等。
+**标签用行内代码写，语言名用标准写法**：
+`C`、`C++`、`PowerShell`、`Bash`、`Text`、`CMake`、`JSON`、`JSONC`、
+`Assembly`、`Ninja`、`Linker Script`、`INI`、`Markdown`、`Makefile`、
+`Batch`、`.gitignore`。
+
+> [!TIP]
+> **为什么用行内代码而不是 `<small style="color:gray">`**：
+> GitHub 会过滤掉 HTML 的 `style` 属性，灰色与字号都不会生效；
+> 而行内代码的底色是 GitHub 自己的样式表给的，**在 GitHub 与 VS Code 上都能渲染**。
 
 **文中的实测代码一律写成完整单文件**，带 `#include` 与 `int main`，
 首行注释写明文件名与编译命令，读者可以直接复制去跑。
@@ -134,7 +142,7 @@ int main(void) { return 0; }
 
 ## 教材结构
 
-<small style="color:gray">text</small>
+`Text`
 
 ```
 C相关课程/
