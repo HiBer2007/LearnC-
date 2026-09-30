@@ -253,7 +253,7 @@ C相关课程/
 | GDB | 16.3（**只有 mingw32 目标**） |
 | CMake | 4.4.3 |
 | Ninja | 1.13.2 |
-| MSVC cl.exe | 19.44（Visual Studio 2022） |
+| MSVC cl.exe | 19.51（Visual Studio 生成工具 2026） |
 | pwsh | 7.6.3 |
 
 ### 编辑器扩展
