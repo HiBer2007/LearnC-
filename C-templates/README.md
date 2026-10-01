@@ -44,10 +44,10 @@
 | 形态 | 模板 | 怎么构建 |
 |---|---|---|
 | 单文件 | `01-compiler/01-c-single-file`、`01-compiler/02-cpp-single-file`、`04-syntax/01-cpp-const-init` | 直接调用编译器，例如 `g++ -std=c++17 -g -O0 -Wall -Wextra main.cpp -o app.exe` |
-| CMake 工程 | `03-build-toolchain/` 与 `05-oop/` 下的六个模板 | `cmake --preset mingw-gdb` 然后 `cmake --build --preset mingw-gdb`；`05-oop/01-cpp-class`、`05-oop/02-cpp-inheritance`、`05-oop/04-cpp-raii-exceptions` 的 Qt 界面版另加 `-DWITH_QT=ON` |
+| CMake 工程 | `03-build-toolchain/` 下的两个、`05-oop/` 下的四个、`06-standard-library/` 下的九个，共十五个模板 | `cmake --preset mingw-gdb` 然后 `cmake --build --preset mingw-gdb`；`05-oop/01-cpp-class`、`05-oop/02-cpp-inheritance`、`05-oop/04-cpp-raii-exceptions`、`06-standard-library/07-cpp-filesystem` 的 Qt 界面版另加 `-DWITH_QT=ON` |
 
 `03-build-toolchain/` 下两个模板的预设文件**需要自己编写**（这是那两道练习的一部分）；
-`05-oop/` 下四个模板的 `CMakePresets.json` 已经给出，可以直接用。
+`05-oop/` 与 `06-standard-library/` 下十三个模板的 `CMakePresets.json` 已经给出，可以直接用。
 
 ### 怎么自查
 
@@ -102,9 +102,18 @@
 | [`05-oop/02-cpp-inheritance`](05-oop/02-cpp-inheritance/) | CMake 多文件（核心 + 命令行 + 两份界面） | `05-类与面向对象` · 第 06 章《继承》、第 07 章《多态：重载、虚函数与它们的分工》 · 进阶 | 抽象基类 + 虚函数 + `override` + 虚析构；工厂与多态遍历；`dynamic_cast` 转到指针与引用 | `include/shape.hpp` + `src/shape.cpp` 骨架（4 个阶段）、命令行版与两份界面；按 TODO 实现 |
 | [`05-oop/03-cpp-templates`](05-oop/03-cpp-templates/) | CMake 多文件（纯命令行） | `05-类与面向对象` · 第 10 章《模板》 · 进阶 | 函数模板与非类型模板参数、一次全特化、类模板与成员模板、显式实例化、模板为什么写在头文件里 | `include/algo.hpp`、`include/stack.hpp`、`src/instantiations.cpp` 骨架（4 个阶段）；按 TODO 实现 |
 | [`05-oop/04-cpp-raii-exceptions`](05-oop/04-cpp-raii-exceptions/) | CMake 多文件（核心 + 命令行 + 两份界面） | `05-类与面向对象` · 第 05 章《RAII 与资源管理》；`04-语法` · 第 13 章《异常》 · 综合 | 自己写 RAII 包装、拷贝禁用、移动转移所有权、异常安全（构造失败不留半成品、失败不留半成品文件、析构不抛） | `include/file_guard.hpp` + `src/file_guard.cpp` 骨架（4 个阶段）、命令行版与两份界面；按 TODO 实现 |
+| [`06-standard-library/01-c-stdlib-toolbox`](06-standard-library/01-c-stdlib-toolbox/) | CMake 多文件（核心 + 命令行 + Win32 界面） | `06-标准库` · 《06-标准库/A-01-输入输出：stdio.md》第 1、2、4 节、《06-标准库/A-02-字符串与内存：string.h.md》第 1 节、《06-标准库/A-04-时间与日期：time.h.md》第 1、6 节、《06-标准库/A-05-工具与其它：stdlib 与杂项.md》第 1、2、6、7 节 · 综合 | C 段综合：`fopen`/`fread` 整份读入、`isalpha` 分词与词频、`qsort` 排序、`clock` 与 `time` 两种计时、`snprintf` 拼报表 | `include/textstats.h` + `src/textstats.c` 骨架（5 个阶段）、`src/main_cli.c`、`src/main_gui_win32.c`、`data/sample.txt`；按 TODO 实现核心逻辑与界面连接 |
+| [`06-standard-library/02-cpp-io-format`](06-standard-library/02-cpp-io-format/) | CMake 多文件（核心 + 命令行） | `06-标准库` · 《06-标准库/B-01-输入输出：iostream.md》第 1、2、3、4、5、6、7、8 节、《06-标准库/B-00-导读：C++ 标准库与 C 的关系.md》第 2、4 节 · 进阶 | 用 `ifstream`/`istringstream` 读同一份样本、`iomanip` 出与 01 逐字节相同的报表、`ofstream` 写文件、与 `printf` 对照 | `include/report.hpp` + `src/report.cpp` 骨架（4 个阶段）、`src/main_cli.cpp`、`data/sample.txt`；按 TODO 实现 |
+| [`06-standard-library/03-cpp-string-text`](06-standard-library/03-cpp-string-text/) | CMake 多文件（核心 + 命令行） | `06-标准库` · 《06-标准库/B-02-std-string 与 string_view.md》第 1、2、3、4、5、6、7、8 节、《06-标准库/B-05-数值.md》第 3 节 · 进阶 | `std::string` 的容量与短串优化、`find`/`replace`/`split`/`trim`、`string_view` 零拷贝切分、数字互转与 UTF-8 字节数 | `include/texttool.hpp` + `src/texttool.cpp` 骨架（4 个阶段）、`src/main_cli.cpp`；按 TODO 实现 |
+| [`06-standard-library/04-cpp-smart-pointers`](06-standard-library/04-cpp-smart-pointers/) | CMake 多文件（核心 + 命令行） | `06-标准库` · 《06-标准库/B-03-智能指针的用法.md》第 1、2、3、4、5 节、《06-标准库/B-04-可调用物的包装.md》第 1、2、3、4 节 · 进阶 | `unique_ptr` 与自定义删除器、`shared_ptr` 的引用计数、循环引用与 `weak_ptr` 断环、`std::function` 回调注册表与 `reference_wrapper` | `include/resource.hpp` + `src/resource.cpp` 骨架（4 个阶段）、`src/main_cli.cpp`；按 TODO 实现 |
+| [`06-standard-library/05-cpp-numeric-random`](06-standard-library/05-cpp-numeric-random/) | CMake 多文件（核心 + 命令行 + Win32 界面） | `06-标准库` · 《06-标准库/B-05-数值.md》第 1、2、3、4、5 节、《06-标准库/A-03-数值、数学与随机.md》第 3、4 节 · 进阶 | `<random>` 的引擎与分布分开、固定种子复现、`rand() % n` 的偏差对照、`<numeric>` 的统计量、文本直方图 | `include/stats.hpp` + `src/stats.cpp` 骨架（3 个阶段）、`src/main_cli.cpp`、`src/main_gui_win32.cpp`；按 TODO 实现核心逻辑与界面连接 |
+| [`06-standard-library/06-cpp-chrono-benchmark`](06-standard-library/06-cpp-chrono-benchmark/) | CMake 多文件（核心 + 命令行） | `06-标准库` · 《06-标准库/B-06-时间：chrono.md》第 1、2、3、4、5 节、《06-标准库/B-10-内存与并发的基础设施.md》第 5 节、《06-标准库/A-04-时间与日期：time.h.md》第 6 节 · 进阶 | `duration` 的单位换算、`steady_clock` 多次测量取分位数、`system_clock` 与本地时间、`atomic` 计数与 `sleep_for` 实测 | `include/bench.hpp` + `src/bench.cpp` 骨架（4 个阶段）、`src/main_cli.cpp`；按 TODO 实现 |
+| [`06-standard-library/07-cpp-filesystem`](06-standard-library/07-cpp-filesystem/) | CMake 多文件（核心 + 命令行 + Win32 界面 + Qt 界面，`WITH_QT` 默认关） | `06-标准库` · 《06-标准库/B-07-文件系统：filesystem.md》第 1、2、3、4、5、6 节、《06-标准库/A-01-输入输出：stdio.md》第 4 节 · 进阶 | `path` 的拆分与拼装、目录遍历与属性统计、`error_code` 与异常两条错误路径、创建与复制改名删除 | `include/dirscan.hpp` + `src/dirscan.cpp` 骨架（4 个阶段）、`src/main_cli.cpp`、两份界面、`data/tree/` 样本树；按 TODO 实现 |
+| [`06-standard-library/08-cpp-config-parser`](06-standard-library/08-cpp-config-parser/) | CMake 多文件（核心 + 命令行） | `06-标准库` · 《06-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 1、2、3、4 节、《06-标准库/B-09-工具类（下）：type_traits 与 concepts.md》第 1、3、4 节、《04-语法/12-编译期能力.md》第 5 节 · 进阶 | `optional` 表达解析失败、`variant` 与 `visit` 表示多选一、`tuple` 与结构化绑定、`<type_traits>` 做约束 | `include/config.hpp` + `src/config.cpp` 骨架（4 个阶段）、`src/main_cli.cpp`、`data/app.ini`；按 TODO 实现 |
+| [`06-standard-library/09-stdlib-capstone`](06-standard-library/09-stdlib-capstone/) | CMake 多文件（核心 + 命令行） | `06-标准库` · 《06-标准库/B-01-输入输出：iostream.md》第 3、7 节、《06-标准库/B-02-std-string 与 string_view.md》第 6 节、《06-标准库/B-06-时间：chrono.md》第 3 节、《06-标准库/B-07-文件系统：filesystem.md》第 5 节、《06-标准库/B-11-收尾：把标准库用对.md》第 5 节 · 综合 | 毕业练习：读日志到解析到统计与固定种子抽样、计时与原子计数、报表，外加 31 项内置自测 | `include/pipeline.hpp` + `src/pipeline.cpp` 骨架（5 个阶段）、`src/main_cli.cpp`、`data/app.log`；按 TODO 实现并让 `--selftest` 全过 |
 
 模板路径分两级：**第一级是板块目录**（`01-compiler`、`03-build-toolchain`、
-`04-syntax`、`05-oop`），第二级是模板目录。
+`04-syntax`、`05-oop`、`06-standard-library`），第二级是模板目录。
 **板块目录一律用 ASCII 名**，因为模板里的 CMake 工程会被构建工具读取，
 而 CMake 的 `file(STRINGS)` 与 Qt 的 `syncqt` 在非 ASCII 路径下会失败。
 
@@ -112,7 +121,7 @@
 
 > [!NOTE]
 > `05-oop/01-cpp-class`、`05-oop/02-cpp-inheritance`、`05-oop/04-cpp-raii-exceptions`
-> 三个模板各带**两份界面**：Win32 版（`app_gui_win32.exe`，用系统自带的
+> 与 `06-standard-library/07-cpp-filesystem` 各带**两份界面**：Win32 版（`app_gui_win32.exe`，用系统自带的
 > `windows.h` 与 GDI，**不需要安装任何第三方界面库**）与 Qt 版（`app_gui_qt.exe`，Qt Widgets）。
 > Qt 版**默认不构建**，需要时按各模板《配置步骤.md》的「两份界面」一节打开
 > `-DWITH_QT=ON` 并指向自己的 Qt 套件目录。构建完成后会自动把 Qt 运行时
@@ -121,6 +130,8 @@
 > 部署产物全部落在 `build\` 里，已被 `.gitignore` 覆盖，**不要提交 DLL**；
 > 目标机器仍需要对应的编译器运行库。
 > `04-syntax/01-cpp-const-init` 与 `05-oop/03-cpp-templates` 只有命令行版。
+> `06-standard-library/01-c-stdlib-toolbox` 与 `06-standard-library/05-cpp-numeric-random`
+> 只有一份 Win32 界面（`app_gui_win32.exe`），`06-standard-library/` 下其余六个模板只有命令行版。
 >
 > 两份界面里的 TODO 是同一批、编号也一致，做一份即可，另一份留作对照。
 > 骨架里的窗口类注册、消息循环、`WM_CREATE` / `WM_COMMAND` / `WM_PAINT` / `WM_DESTROY`

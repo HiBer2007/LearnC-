@@ -1,0 +1,81 @@
+{
+  // ===================================================================
+  //  示例 06-standard-library/05-cpp-numeric-random —— 构建任务
+  // ===================================================================
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: 配置 (MinGW + GDB)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--preset", "mingw-gdb"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "CMake: 编译 (MinGW + GDB)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--build", "--preset", "mingw-gdb"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": "$gcc",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "构建: CMake (MinGW + GDB)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: 配置 (MinGW + GDB)",
+        "CMake: 编译 (MinGW + GDB)"
+      ],
+      "problemMatcher": [],
+      "detail": "配置并编译，产物 build/mingw/bin/app_cli.exe 与 app_gui_win32.exe"
+    },
+
+    {
+      "label": "CMake: 配置 (MSVC)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--preset", "msvc"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "CMake: 编译 (MSVC)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--build", "--preset", "msvc-debug"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "clear": true
+      }
+    },
+    {
+      "label": "构建: CMake (MSVC)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: 配置 (MSVC)",
+        "CMake: 编译 (MSVC)"
+      ],
+      "problemMatcher": [],
+      "detail": "配置并编译，产物 build/msvc/bin/Debug/app_cli.exe 与 app_gui_win32.exe"
+    }
+  ]
+}

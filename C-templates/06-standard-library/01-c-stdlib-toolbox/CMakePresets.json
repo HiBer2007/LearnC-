@@ -1,0 +1,46 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "mingw-gdb",
+      "displayName": "MinGW GCC + GDB (Ninja, Debug)",
+      "description": "gcc 编译，产出 DWARF 调试信息；产物在 build/mingw/bin/ 下（app_cli.exe 与 app_gui_win32.exe）",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/mingw",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "msvc",
+      "displayName": "MSVC + Visual Studio 调试器 (Visual Studio 17 2022, x64)",
+      "description": "cl.exe 编译，产出 PDB，供 Visual Studio 调试器调试；产物在 build/msvc/bin/Debug/ 下",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/msvc",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "mingw-gdb",
+      "displayName": "编译 (MinGW + GDB)",
+      "configurePreset": "mingw-gdb"
+    },
+    {
+      "name": "msvc-debug",
+      "displayName": "编译 (MSVC + Visual Studio 调试器, Debug)",
+      "configurePreset": "msvc",
+      "configuration": "Debug"
+    }
+  ]
+}

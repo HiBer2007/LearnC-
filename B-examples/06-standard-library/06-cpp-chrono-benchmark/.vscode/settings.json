@@ -1,0 +1,21 @@
+{
+  // ===================================================================
+  //  示例 06-standard-library/06-cpp-chrono-benchmark —— 编辑器设置
+  // ===================================================================
+  "files.encoding": "utf8",
+  "files.autoGuessEncoding": true,
+
+    "C_Cpp.default.intelliSenseMode": "windows-gcc-x64",
+  "C_Cpp.default.cppStandard": "c++17",
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/mingw/compile_commands.json",
+
+  "C_Cpp.debugShortcut": true,
+
+  "cmake.useCMakePresets": "auto",
+  "cmake.cmakePath": "cmake",
+  "cmake.configureOnOpen": false,
+  "cmake.buildBeforeRun": false,
+  "cmake.exportCompileCommandsFile": true,
+
+  "debug.onTaskErrors": "showErrors"
+}

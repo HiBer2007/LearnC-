@@ -1,0 +1,16 @@
+The standard library is not one library but a set of headers.
+Each header has its own history, its own rules, and its own traps.
+Some of them come from C, and some were added by C++11 and later.
+Reading a file, counting words, sorting the counts, and printing a report
+touches more of the library than most people expect at first.
+
+A word counter looks simple until the details arrive.
+What counts as a word? Is the hyphen a separator or a letter?
+The rule must be written down, and the program must follow the rule.
+This sample exists so that two programs, one written in C and one in C++,
+can be compared on exactly the same input.
+
+The file is small, the words repeat, and the punctuation is ordinary.
+Repetition is the point: a counter that never sees the same word twice
+proves very little. The word the appears many times, and so does word.
+Test data should be boring, and boring data is reproducible data.

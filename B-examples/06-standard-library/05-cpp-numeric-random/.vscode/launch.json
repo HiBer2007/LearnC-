@@ -1,0 +1,118 @@
+{
+  // ===================================================================
+  //  示例 06-standard-library/05-cpp-numeric-random —— 调试配置
+  //
+  //  四个配置 = 两个目标 × 两条调试路线：
+  //    app_cli        命令行版，控制台里看输出
+  //    app_gui_win32  GUI 版（Win32 API），窗口里看直方图
+  //
+  //  ── 关于「GDB ·」开头的配置（重要） ──
+  //    所在路径含中文时，GDB 无法启动调试，且无法通过配置项解决：
+  //      GDB 经 MI 协议接收文件名时期望 ANSI 代码页(936)字节，
+  //      而 VS Code 发送 UTF-8 字节，两者不一致，GDB 打不开可执行文件。
+  //
+  //    表现：提示 "Program path ... is missing or invalid"（但文件确实存在），
+  //          或弹出空的「选择要终止的调试会话」列表后无反应。
+  //
+  //    工程所在路径含中文时，「GDB ·」配置【不可用】，
+  //    请使用「MSVC ·」配置（或用 CodeLLDB）。
+  //    把工程移到全英文路径后，GDB 配置即可恢复正常。
+  //
+  //    详见《01-编译器/02-环境配置.md》第 1 章第 2 节、第 9 章第 13 节。
+  // ===================================================================
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GDB · 命令行版 (MinGW g++)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/mingw/bin/app_cli.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "构建: CMake (MinGW + GDB)",
+      "setupCommands": [
+        {
+          // 让 vector / string 显示成内容而不是内部指针的关键
+          // MinGW 版 GDB 常常没把 libstdc++ 的 pretty-printer 放进默认搜索路径，
+          // 只写 -enable-pretty-printing 是【没有用的】。
+          "description": "把 libstdc++ 的 pretty-printer 脚本目录加进 GDB 的 Python 路径",
+          "text": "python import sys, glob, os, gdb; sys.path += glob.glob(os.path.join(os.path.dirname(os.path.dirname(gdb.PYTHONDIR)), 'gcc-*', 'python'))",
+          "ignoreFailures": true
+        },
+        {
+          "description": "注册 libstdc++ pretty-printer（真正让它生效的一步）",
+          "text": "python import libstdcxx.v6",
+          "ignoreFailures": true
+        },
+        {
+          "description": "为 MI 输出启用整齐打印（VS Code 走的就是 MI 协议）",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "关闭分页",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        }
+      ],
+      "logging": {
+        "moduleLoad": false,
+        "programOutput": true
+      }
+    },
+    {
+      "name": "MSVC · 命令行版 (MSVC cl)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/msvc/bin/Debug/app_cli.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "构建: CMake (MSVC)"
+    },
+    {
+      // GUI 版没有控制台窗口，调试时看「变量」「调用堆栈」与断点即可。
+      // 断点建议下在 src/stats_demo.cpp 里：那里是纯逻辑，与界面无关。
+      "name": "GDB · GUI 版 Win32 (MinGW g++)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/mingw/bin/app_gui_win32.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "构建: CMake (MinGW + GDB)",
+      "setupCommands": [
+        {
+          "description": "关闭分页",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        }
+      ],
+      "logging": {
+        "moduleLoad": false,
+        "programOutput": true
+      }
+    },
+    {
+      "name": "MSVC · GUI 版 Win32 (MSVC cl)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/msvc/bin/Debug/app_gui_win32.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "构建: CMake (MSVC)"
+    }
+  ]
+}

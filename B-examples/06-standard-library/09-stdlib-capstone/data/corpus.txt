@@ -1,0 +1,48 @@
+The standard library is a part of the language, not a separate product.
+Every conforming implementation ships it, and every program may use it.
+It is organized by headers, and each header answers one kind of question.
+The iostream header answers how to read and write.
+The string header answers how to hold and change text.
+The vector header answers how to keep a run of values.
+The containers and the algorithms are the part called the STL.
+The rest of the library is just as important.
+A program that writes files, measures time, or parses text needs that rest.
+Reading a file line by line is a small task with several traps.
+Text mode and binary mode are not the same thing on every system.
+The newline translation happens in the runtime, not in the program.
+A stream that fails stays failed until the state is cleared.
+That is why a loop must test the stream after every read.
+Counting words is a good exercise for the whole library.
+A word is a run of letters, and everything else is a separator.
+Folding case before counting changes the answer in a useful way.
+A map from word to count is the simplest way to count.
+Sorting the pairs by count gives a frequency list.
+Sorting by count and then by word gives a stable list.
+A stable list is what makes a report repeatable byte for byte.
+Timing a program needs a clock that only moves forward.
+The steady clock is that clock, and it is not the wall clock.
+The wall clock can jump when the system adjusts its time.
+A benchmark that uses the wall clock can report a negative duration.
+Measuring four phases separately shows where the time goes.
+Reading a file is usually slower than counting its words.
+The difference is large enough to see without a profiler.
+A report is a list of sections, and each section owns its text.
+Building a section as an object makes the report easy to extend.
+A callback table lets a report render its sections in order.
+Ownership stays with the table, so nothing leaks and nothing dangles.
+The order of registration is the order of the output.
+That order is a decision, not an accident.
+Configuration belongs outside the program text.
+A small parser for a simple format is often the right answer.
+A key that is missing is not the same as a key that is zero.
+One type can hold a value of several types, and the type travels with it.
+A value that may be absent is best held in a type that says so.
+A tuple carries a few values together without inventing a struct.
+Comparing floating point numbers needs a tolerance, not equality.
+Printing a floating point number needs a fixed precision for a stable report.
+The locale can change the decimal point, so set it or avoid it.
+Text that comes from a file may use either line ending.
+Stripping the carriage return is a one line fix.
+A test that runs on every build catches most of these mistakes.
+A good test prints what it expected and what it saw.
+The library rewards the reader who knows what each header is for.

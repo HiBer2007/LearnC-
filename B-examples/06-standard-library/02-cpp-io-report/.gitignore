@@ -1,0 +1,10 @@
+# 构建产物（可随时删，重新构建会自动生成）
+build/
+
+# MSVC 的中间文件
+*.ilk
+*.obj
+*.pdb
+
+# 命令行版用 --out 生成的报表转储
+report-out.txt
