@@ -343,6 +343,33 @@ lambda_fptr_fail.cpp:4:21: error: cannot convert 'main()::<lambda(int)>' to 'int
 > 大小由捕获决定、类型唯一、无捕获时能退化成函数指针、
 > 值捕获的副本默认只读（第 4.1 小节）、引用捕获要自己管生命周期（第 3.2 小节）。
 
+## 2.4 立即调用的 lambda
+
+**lambda 定义出来可以不存进变量，就地调用**：在闭包的 `}` 后面直接接一对括号。
+
+真实项目里用它在一行日志里拼一小段字符串
+（`modules/NeoCore/src/plugin_loader.cpp` 第 215 至 221 行，**下面是节选**）：
+
+`C++`
+
+```cpp
+    CLogger::Info("Loaded parser: {} (handles {})",
+        loaded.capability.name,
+        [](const auto& exts){
+            std::string s;
+            for (auto& e : exts) { if (!s.empty()) s += ","; s += e; }
+            return s;
+        }(loaded.capability.extensions));
+```
+
+**它解决的场景是「一次性的小计算，而且要写在表达式里」**：
+日志的参数位置只放得下表达式，写不下一个 `for` 循环；
+为它单独写一个具名函数，又只在这一次调用。
+
+**代价在可读性**：调用发生在闭包结尾那对括号上，与 `[` 之间隔着好几行，
+读的时候容易把整个 lambda 当成一个实参，漏看它已经被调用过了。
+**只在两三行的短计算上用**；计算再长就抽成具名函数。
+
 ---
 
 # 第 3 节 捕获列表

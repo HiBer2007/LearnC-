@@ -757,6 +757,136 @@ SUMMARY: AddressSanitizer: 64 byte(s) leaked in 2 allocation(s)
 **能用引用就不要用指针，能用 `unique_ptr` 就不要用 `shared_ptr`**：
 所有权越简单，需要人判断的地方越少。
 
+## 5.6 一个拥有者，多个观察者
+
+**所有权只能有一份，引用它的地方却往往不止一处。**
+`unique_ptr` 不允许拷贝，因此「按另一种顺序再存一份」只能存**观察用的裸指针**。
+
+以下引自 `nbtcpp` 的 `NbtCompound`（`src/tags/nbt_compound.cpp` 第 54 至 83 行，
+**下面是节选**，原文副本在 `A-教学素材/05-类与面向对象/指针与所有权/`）：
+
+`C++`
+
+```cpp
+void NbtCompound::insert(size_t index, NbtTagPtr tag) {
+    if (!tag) throw std::invalid_argument("Cannot insert null tag into NbtCompound");
+    if (tag->name().empty())
+        throw std::invalid_argument("Tags added to NbtCompound must have a non-empty name");
+    if (tag->parent())
+        throw std::invalid_argument("Tag already has a parent");
+
+    const auto& name = tag->name();
+    if (tags_.find(name) != tags_.end())
+        throw std::invalid_argument("Duplicate tag name in NbtCompound: " + name);
+
+    adopt(tag.get());
+    tags_[name] = std::move(tag);
+    order_.insert(order_.begin() + static_cast<ptrdiff_t>(index), tags_[name].get());
+    fire_changed();
+}
+
+NbtTagPtr NbtCompound::remove(NbtTag* tag) {
+    if (!tag) return nullptr;
+    auto it = tags_.find(tag->name());
+    if (it == tags_.end() || it->second.get() != tag) return nullptr;
+
+    auto ptr = std::move(it->second);
+    tags_.erase(it);
+    auto oit = std::find(order_.begin(), order_.end(), ptr.get());
+    if (oit != order_.end()) order_.erase(oit);
+    ptr->set_parent(nullptr);
+    fire_changed();
+    return ptr;
+}
+```
+
+两个成员的分工写在声明里（`include/nbtcpp/tags/nbt_compound.h` 第 118 至 119 行，**原文**）：
+
+`C++`
+
+```cpp
+    std::map<std::string, NbtTagPtr> tags_;
+    std::vector<NbtTag*> order_;   // insertion-order tracking
+```
+
+**按名字查找要用 `map`，保持插入顺序要用 `vector`**，两者不能互相替代；
+而所有权只有一份，因此 `order_` 里只能是裸指针。
+`NbtTagPtr` 这个别名本身就把「谁负责释放」回答了（`nbt_tag.h` 第 213 行，**下面是节选**）：
+
+`C++`
+
+```cpp
+using NbtTagPtr = std::unique_ptr<NbtTag>;
+```
+
+> [!CAUTION]
+> **删掉对象时必须两处一起改。** `remove` 里先从 `tags_` 擦除（拥有者），
+> 紧接着从 `order_` 中查找并擦除对应项（观察者）。
+> 漏掉第二步，`order_` 里就留下悬空指针，要等到下一次遍历它时才崩。
+
+`实测数据`
+`C++`
+
+```cpp
+// owner_observer.cpp
+// 编译（WSL Ubuntu 24.04.5）：g++ -std=c++17 -fsanitize=address -g owner_observer.cpp -o owner_observer
+#include <cstdio>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+
+struct Tag {
+    std::string name;
+    int id;
+};
+
+int main() {
+    std::setvbuf(stdout, nullptr, _IONBF, 0);            /* 后面会崩，输出立刻落盘 */
+
+    std::map<std::string, std::unique_ptr<Tag>> owned;   /* 拥有，按名字索引 */
+    std::vector<Tag *> order;                            /* 观察，按登记顺序 */
+
+    owned["a"] = std::make_unique<Tag>(Tag{"a", 1});
+    order.push_back(owned["a"].get());
+
+    owned.erase("a");            /* 只改了拥有者，忘了同步 order */
+    Tag *stale = order[0];
+    std::printf("order 里还有 %zu 个观察指针\n", order.size());
+    std::printf("它指向的对象 id = %d\n", stale->id);    /* 悬空访问 */
+    return 0;
+}
+```
+
+`Bash`
+
+```bash
+g++ -std=c++17 -fsanitize=address -g owner_observer.cpp -o owner_observer && ./owner_observer
+```
+
+`实测数据`
+`Text`
+
+```text
+order 里还有 1 个观察指针
+=================================================================
+==494==ERROR: AddressSanitizer: heap-use-after-free on address 0x504000000030
+READ of size 4 at 0x504000000030 thread T0
+    #0 in main                owner_observer.cpp:25
+0x504000000030 is located 32 bytes inside of 40-byte region
+freed by thread T0 here:
+    #0 in operator delete(void*, unsigned long)
+    #1 in std::default_delete<Tag>::operator()(Tag*) const
+
+SUMMARY: AddressSanitizer: heap-use-after-free
+```
+
+报告里的路径与地址列从略，其余照抄运行输出。
+
+**`remove` 的签名也值得留意**：参数是用于查找的裸指针，返回值是 `unique_ptr`，
+它把所有权**交还**给调用方，由调用方决定什么时候销毁。
+换成 `void remove(NbtTag *)` 直接删掉，调用方就无法「先摘下来，过一会儿再装回去」。
+
 ---
 
 # 第 6 节 检查清单
