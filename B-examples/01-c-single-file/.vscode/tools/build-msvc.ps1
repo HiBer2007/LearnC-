@@ -114,6 +114,8 @@ Write-Host "[BUILD] output: $outFull"
 Push-Location -LiteralPath $outDir
 # /nologo                    不打印版权头
 # /std:c17                   使用 C17 标准（对 .cpp 会自动忽略）
+# /EHsc                      标准 C++ 异常模型。编 C++ 时应当加上：
+#                            缺了它，标准库内部用到异常的地方会报 C4530
 # /source-charset:utf-8      源码按 UTF-8 读取
 # /execution-charset:gbk     字符串常量按 GBK 写入 exe
 #
@@ -124,7 +126,7 @@ Push-Location -LiteralPath $outDir
 #   拆开书写即可：源码用 UTF-8，exe 内的字符串用 GBK。
 #
 # /Zi 生成 PDB 调试信息 | /Od 关闭优化便于单步 | /W3 警告等级
-& cl.exe /nologo /std:c17 /source-charset:utf-8 /execution-charset:gbk `
+& cl.exe /nologo /std:c17 /EHsc /source-charset:utf-8 /execution-charset:gbk `
          /Zi /Od /W3 "/Fe:$feArg" "/Fo:$foArg" $srcArg
 $rc = $LASTEXITCODE
 Pop-Location

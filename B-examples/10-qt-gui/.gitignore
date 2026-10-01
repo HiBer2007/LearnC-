@@ -1,0 +1,12 @@
+# 构建产物（可随时删，重新构建会自动生成）
+build-qt/
+build/
+out/
+
+# MSVC 的中间文件
+*.ilk
+*.obj
+*.pdb
+*.exe
+*.lib
+*.exp

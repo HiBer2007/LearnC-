@@ -14,6 +14,24 @@
     "*.hpp": "cpp"
   },
 
+  // ---------- 大目录排除 ----------
+  // 教训：把 Qt 源码（800 MB、7 万多个文件）克隆进工作区之后，
+  // 文件监视与智能感知索引会把整机拖到卡顿。第三方依赖一律放在工作区外，
+  // 这里再兜一层：即使有人在仓库里解出大目录，也不参与监视、搜索与索引。
+  "files.watcherExclude": {
+    "**/第三方/**": true,
+    "**/build/**": true,
+    "**/.git/objects/**": true
+  },
+  "search.exclude": {
+    "**/第三方/**": true,
+    "**/build/**": true
+  },
+  "C_Cpp.files.exclude": {
+    "**/第三方/**": true,
+    "**/build/**": true
+  },
+
   // ---------- 智能感知（补全 / 跳转 / 波浪线）----------
   // 默认按 MinGW GCC 解析。写 C++ 时可以用命令面板切到别的配置：
   //   Ctrl+Shift+P → C/C++: Select IntelliSense Configuration
