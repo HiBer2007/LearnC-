@@ -1,0 +1,63 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "mingw-gdb",
+      "displayName": "MinGW GCC + GDB (Ninja, Debug)",
+      "description": "gcc 编译，产物 build/mingw/bin/app_cli.exe；配置阶段会把 objdump / nm / size / readelf 的路径记进程序",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/mingw",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "mingw-release",
+      "displayName": "MinGW GCC (Ninja, Release, -O2)",
+      "description": "-O2 下 text 段会小一截，正好用来看 size 的三个数字怎么变",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/mingw-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "msvc",
+      "displayName": "MSVC (Visual Studio 17 2022, x64)",
+      "description": "cl.exe 编译；MSVC 那边没有 size / readelf，对应两段会打印「没找到」",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/msvc",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "mingw-gdb",
+      "displayName": "编译 (MinGW + GDB)",
+      "configurePreset": "mingw-gdb"
+    },
+    {
+      "name": "mingw-release",
+      "displayName": "编译 (MinGW, -O2)",
+      "configurePreset": "mingw-release"
+    },
+    {
+      "name": "msvc-debug",
+      "displayName": "编译 (MSVC, Debug)",
+      "configurePreset": "msvc",
+      "configuration": "Debug"
+    }
+  ]
+}

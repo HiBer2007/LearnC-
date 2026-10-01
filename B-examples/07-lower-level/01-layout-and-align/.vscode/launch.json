@@ -1,0 +1,83 @@
+{
+  // ===================================================================
+  //  示例 07-lower-level/01-layout-and-align · 布局与对齐
+  //                                            —— 调试配置
+  //
+  //  两个配置 = 一个目标 × 两条调试路线：
+  //    GDB · app_cli    MinGW g++ 编译，GDB 调试
+  //    MSVC · app_cli   cl.exe 编译，Visual Studio 调试器调试
+  //
+  //  ── 关于「GDB ·」开头的配置（重要） ──
+  //    工作区路径含中文时，GDB 无法启动调试：GDB 经 MI 协议收到的文件名
+  //    期望 ANSI 代码页(936)字节，而 VS Code 发的是 UTF-8。
+  //    表现是提示 "Program path ... is missing or invalid"（文件确实存在）。
+  //    把工程移到全英文路径后即可恢复；路径含中文时请改用「MSVC ·」配置
+  //    或 CodeLLDB。详见《01-编译器/02-环境配置.md》。
+  //
+  //  伪共享那一段要起线程：在这里单步意义不大，看输出即可。
+  // ===================================================================
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GDB · app_cli (MinGW g++)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/mingw/bin/app_cli.exe",
+      // 加 "--iterations 2000000" 可以让伪共享那一段跑得快些
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "构建: CMake (MinGW + GDB)",
+      "setupCommands": [
+        {
+          "description": "关闭分页",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        }
+      ],
+      "logging": {
+        "moduleLoad": false,
+        "programOutput": true
+      }
+    },
+    {
+      "name": "GDB · 自测 (MinGW g++)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/mingw/bin/app_cli.exe",
+      "args": ["--selftest"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "构建: CMake (MinGW + GDB)",
+      "setupCommands": [
+        {
+          "description": "关闭分页",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        }
+      ],
+      "logging": {
+        "moduleLoad": false,
+        "programOutput": true
+      }
+    },
+    {
+      "name": "MSVC · app_cli (cl.exe)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/msvc/bin/Debug/app_cli.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "构建: CMake (MSVC)"
+    }
+  ]
+}

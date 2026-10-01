@@ -1,0 +1,59 @@
+{
+  // ===================================================================
+  //  示例 07-lower-level/02-volatile-and-registers · 寄存器与 volatile
+  //                                                  —— 调试配置
+  //
+  //  「GDB ·」配置在路径含中文时不可用（GDB 经 MI 收到的文件名是 ANSI 代码页
+  //  字节，而 VS Code 发的是 UTF-8）；路径含中文时请用「MSVC ·」配置。
+  //  详见《01-编译器/02-环境配置.md》。
+  // ===================================================================
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "GDB · app_cli (MinGW gcc, -O0)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/mingw/bin/app_cli.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "构建: CMake (MinGW + GDB)",
+      "setupCommands": [
+        { "description": "关闭分页", "text": "set pagination off", "ignoreFailures": true }
+      ],
+      "logging": { "moduleLoad": false, "programOutput": true }
+    },
+    {
+      "name": "GDB · app_cli (MinGW gcc, -O2)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/mingw-release/bin/app_cli.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "externalConsole": false,
+      "MIMode": "gdb",
+      "preLaunchTask": "构建: CMake (MinGW, -O2)",
+      "setupCommands": [
+        { "description": "关闭分页", "text": "set pagination off", "ignoreFailures": true }
+      ],
+      "logging": { "moduleLoad": false, "programOutput": true }
+    },
+    {
+      "name": "MSVC · app_cli (cl.exe)",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/msvc/bin/Debug/app_cli.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}",
+      "environment": [],
+      "console": "integratedTerminal",
+      "preLaunchTask": "构建: CMake (MSVC)"
+    }
+  ]
+}

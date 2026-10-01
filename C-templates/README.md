@@ -17,7 +17,7 @@
 |---|---|---|
 | **PowerShell 7** | 命令 `pwsh` 可用 | 本目录的练习全部以 PowerShell 7 为准。它用于执行构建任务脚本（`.ps1`）。安装方法见《01-编译器/02-环境配置.md》第 3 章步骤 1 |
 | 编译器 | `gcc` / `g++` / `gdb` 可用 | 或在 `01-compiler/02-cpp-single-file` 等目录中验证 MSVC 路线 |
-| CMake 与 Ninja | `cmake` / `ninja` 可用 | 仅 `03-build-toolchain/` 与 `05-oop/` 下的 CMake 工程需要 |
+| CMake 与 Ninja | `cmake` / `ninja` 可用 | 仅 `03-build-toolchain/`、`05-oop/`、`06-standard-library/` 与 `07-lower-level/` 下的 CMake 工程需要 |
 
 > **说明**：Windows 自带的 `cmd.exe` 与 Windows PowerShell 5.1 在中文路径下均存在
 > 实际限制（代码页解析、参数转义），不建议用于本目录的练习。原因与实测记录见
@@ -44,10 +44,10 @@
 | 形态 | 模板 | 怎么构建 |
 |---|---|---|
 | 单文件 | `01-compiler/01-c-single-file`、`01-compiler/02-cpp-single-file`、`04-syntax/01-cpp-const-init` | 直接调用编译器，例如 `g++ -std=c++17 -g -O0 -Wall -Wextra main.cpp -o app.exe` |
-| CMake 工程 | `03-build-toolchain/` 下的两个、`05-oop/` 下的四个、`06-standard-library/` 下的九个，共十五个模板 | `cmake --preset mingw-gdb` 然后 `cmake --build --preset mingw-gdb`；`05-oop/01-cpp-class`、`05-oop/02-cpp-inheritance`、`05-oop/04-cpp-raii-exceptions`、`06-standard-library/07-cpp-filesystem` 的 Qt 界面版另加 `-DWITH_QT=ON` |
+| CMake 工程 | `03-build-toolchain/` 下的两个、`05-oop/` 下的四个、`06-standard-library/` 下的九个、`07-lower-level/` 下的四个，共十九个模板 | `cmake --preset mingw-gdb` 然后 `cmake --build --preset mingw-gdb`；`05-oop/01-cpp-class`、`05-oop/02-cpp-inheritance`、`05-oop/04-cpp-raii-exceptions`、`06-standard-library/07-cpp-filesystem` 的 Qt 界面版另加 `-DWITH_QT=ON` |
 
 `03-build-toolchain/` 下两个模板的预设文件**需要自己编写**（这是那两道练习的一部分）；
-`05-oop/` 与 `06-standard-library/` 下十三个模板的 `CMakePresets.json` 已经给出，可以直接用。
+`05-oop/`、`06-standard-library/` 与 `07-lower-level/` 下十七个模板的 `CMakePresets.json` 已经给出，可以直接用。
 
 ### 怎么自查
 
@@ -111,6 +111,11 @@
 | [`06-standard-library/07-cpp-filesystem`](06-standard-library/07-cpp-filesystem/) | CMake 多文件（核心 + 命令行 + Win32 界面 + Qt 界面，`WITH_QT` 默认关） | `06-标准库` · 《06-标准库/B-07-文件系统：filesystem.md》第 1、2、3、4、5、6 节、《06-标准库/A-01-输入输出：stdio.md》第 4 节 · 进阶 | `path` 的拆分与拼装、目录遍历与属性统计、`error_code` 与异常两条错误路径、创建与复制改名删除 | `include/dirscan.hpp` + `src/dirscan.cpp` 骨架（4 个阶段）、`src/main_cli.cpp`、两份界面、`data/tree/` 样本树；按 TODO 实现 |
 | [`06-standard-library/08-cpp-config-parser`](06-standard-library/08-cpp-config-parser/) | CMake 多文件（核心 + 命令行） | `06-标准库` · 《06-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 1、2、3、4 节、《06-标准库/B-09-工具类（下）：type_traits 与 concepts.md》第 1、3、4 节、《04-语法/12-编译期能力.md》第 5 节 · 进阶 | `optional` 表达解析失败、`variant` 与 `visit` 表示多选一、`tuple` 与结构化绑定、`<type_traits>` 做约束 | `include/config.hpp` + `src/config.cpp` 骨架（4 个阶段）、`src/main_cli.cpp`、`data/app.ini`；按 TODO 实现 |
 | [`06-standard-library/09-stdlib-capstone`](06-standard-library/09-stdlib-capstone/) | CMake 多文件（核心 + 命令行） | `06-标准库` · 《06-标准库/B-01-输入输出：iostream.md》第 3、7 节、《06-标准库/B-02-std-string 与 string_view.md》第 6 节、《06-标准库/B-06-时间：chrono.md》第 3 节、《06-标准库/B-07-文件系统：filesystem.md》第 5 节、《06-标准库/B-11-收尾：把标准库用对.md》第 5 节 · 综合 | 毕业练习：读日志到解析到统计与固定种子抽样、计时与原子计数、报表，外加 31 项内置自测 | `include/pipeline.hpp` + `src/pipeline.cpp` 骨架（5 个阶段）、`src/main_cli.cpp`、`data/app.log`；按 TODO 实现并让 `--selftest` 全过 |
+| [`07-lower-level/01-layout-probe`](07-lower-level/01-layout-probe/) | CMake 多文件（C，命令行） | `07-更底层` · 《07-更底层/01-对象在哪里：栈、堆与静态区.md》第 1、3、5 节、《07-更底层/02-对齐、填充与缓存.md》第 2 节 · 进阶 | 六类对象落在哪一段、段间距与两次运行的差别、`sizeof`/`_Alignof`/`offsetof` 三份布局、对齐自检 | `include/layout_probe.h` + `include/shapes.h` + `src/layout_probe.c`、`src/shapes.c` 骨架（4 个阶段）、`src/main_cli.c`、`src/probe_data.c`；按 TODO 实现 |
+| [`07-lower-level/02-mmio-lab`](07-lower-level/02-mmio-lab/) | CMake 多文件（C，命令行 + QEMU 交叉实验） | `07-更底层` · 《07-更底层/03-寄存器、位与 volatile.md》第 1、2、3 节 · 进阶 | 内存映射 I/O 的位操作、`BSRR`/`BRR` 一次写完成、`volatile` 有与无的汇编和运行对照、字段读改写 | `include/regs.h` + `include/gpio_lab.h` + `src/gpio_lab.c` 骨架（4 个阶段，阶段 3 在 `arm/` 下跑 QEMU）、`src/regs.c`、`src/main_cli.c`；按 TODO 实现 |
+| [`07-lower-level/03-linker-script-lab`](07-lower-level/03-linker-script-lab/) | 交叉编译（arm-none-eabi-gcc + QEMU，无 CMake） | `07-更底层` · 《07-更底层/07-链接脚本与启动代码.md》第 2、3、5 节 · 综合 | 从一个「能链接但跑不起来」的链接脚本里找出并修好两处缺陷：向量表被 `--gc-sections` 回收、`.data` 少了 `AT> FLASH` | `STM32F103C8_FLASH.ld`（有缺陷）+ `startup_stm32f103xe.s` + `app/main.c` + `build.sh`；自行定位缺陷并改脚本 |
+| [`07-lower-level/04-static-lib`](07-lower-level/04-static-lib/) | CMake 多文件（C，静态库 + 两个驱动） | `07-更底层` · 《07-更底层/06-符号与链接属性.md》第 2、3、4、6 节 · 进阶 | 内部链接与重复定义、静态库的成员粒度与链接顺序、弱的默认实现与强定义覆盖（含覆盖失败的静默后果） | `include/sensor.h` + `core/sensor.c`、`core/sensor_extra.c`、`core/sensor_default.c`、`drivers/driver_fast.c` 骨架（4 个阶段）、`src/main_cli.c`；按 TODO 实现 |
+| [`07-lower-level/05-critical-section`](07-lower-level/05-critical-section/) | CMake 多文件（C++，命令行） | `07-更底层` · 《07-更底层/10-中断、并发与内存序.md》第 2、3、4 节 · 综合 | 丢更新复现、三种修法（关中断 / 可嵌套临界区 / 原子读-改-写）与四种写法的代价对照 | `include/sim_irq.hpp` + `include/counter.hpp` + `src/counter.cpp` 骨架（4 个阶段）、`src/sim_irq.cpp`、`src/main_cli.cpp`；按 TODO 实现 |
 
 模板路径分两级：**第一级是板块目录**（`01-compiler`、`03-build-toolchain`、
 `04-syntax`、`05-oop`、`06-standard-library`），第二级是模板目录。

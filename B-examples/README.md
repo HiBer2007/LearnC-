@@ -38,6 +38,12 @@
 | [`06-standard-library/07-cpp-filesystem-scan`](06-standard-library/07-cpp-filesystem-scan/) | CMake 多文件 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `06-标准库`：《06-标准库/B-07-文件系统：filesystem.md》第 1、3、5 节 | `<filesystem>` 遍历目录与属性统计、`error_code` 与异常两条错误路线 |
 | [`06-standard-library/08-cpp-config-parser`](06-standard-library/08-cpp-config-parser/) | CMake 多文件 | 命令行 | `06-标准库`：《06-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 2、3、4 节、《06-标准库/B-09-工具类（下）：type_traits 与 concepts.md》第 1 节 | `tuple` / `optional` / `variant` 表示配置值，类型特征决定 `get<T>()` 能否取用 |
 | [`06-standard-library/09-stdlib-capstone`](06-standard-library/09-stdlib-capstone/) | CMake 多文件，综合 | 命令行 | `06-标准库`：《06-标准库/B-01-输入输出：iostream.md》第 6、7 节、《06-标准库/B-02-std-string 与 string_view.md》第 3、6 节、《06-标准库/B-06-时间：chrono.md》第 3 节（综合前八个示例） | 读文件到出报表的整条流水线：解析、计算、计时、报表，把前八份的能力串起来 |
+| [`07-lower-level/01-layout-and-align`](07-lower-level/01-layout-and-align/) | CMake 多文件（C++） | 命令行 | `07-更底层`：《07-更底层/01-对象在哪里：栈、堆与静态区.md》第 1.1、1.2、1.3 小节、《07-更底层/02-对齐、填充与缓存.md》第 2.1、3.2 小节 | 六类对象的地址、`sizeof` / `offsetof` 对照、`packed` 与 `alignas`、伪共享计时 |
+| [`07-lower-level/02-volatile-and-registers`](07-lower-level/02-volatile-and-registers/) | CMake 多文件（C）+ 交叉编译 | 命令行（含 semihosting） | `07-更底层`：《07-更底层/03-寄存器、位与 volatile.md》第 1.4、2.1、2.3 小节 | 同一段轮询代码带与不带 `volatile` 的 `-O0` / `-O2` 反汇编对照，真板上 `mww` 与 SysTick 两种触发各跑一遍 |
+| [`07-lower-level/03-bare-metal-boot`](07-lower-level/03-bare-metal-boot/) | 交叉编译（C + 汇编 + 链接脚本） | 命令行（含 semihosting） | `07-更底层`：《07-更底层/07-链接脚本与启动代码.md》第 1.2、2.4、2.6、3.3 小节 | 自己的链接脚本与向量表：段表、`Reset_Handler`、`.data` / `.bss`，QEMU 与真板两种跑法 |
+| [`07-lower-level/04-symbols-and-linking`](07-lower-level/04-symbols-and-linking/) | CMake 多文件（C + C++） | 命令行 | `07-更底层`：《07-更底层/06-符号与链接属性.md》第 1.2、4.2、6.1 小节 | 弱符号覆盖、静态库成员粒度与产物大小、`extern "C"` 与修饰名 |
+| [`07-lower-level/05-interrupt-and-atomic`](07-lower-level/05-interrupt-and-atomic/) | CMake 多文件（C++）+ 交叉编译 | 命令行（含 semihosting） | `07-更底层`：《07-更底层/10-中断、并发与内存序.md》第 2.1、2.2、3.4 小节 | 丢更新复现与三种修法（关中断 / 临界区 / 原子量）、真板上的中断延迟测量 |
+| [`07-lower-level/06-binary-tools`](07-lower-level/06-binary-tools/) | CMake 多文件（C） | 命令行 | `07-更底层`：《07-更底层/13-收尾：什么时候需要下到这一层.md》第 1.1、1.4 小节、《07-更底层/09-C++ 对象布局与它的硬件代价.md》第 2.1、2.4 小节 | 把 `nm` / `objdump` / `size` / `readelf` 的输出解析成结论，PE 与 ELF 两种产物都能看 |
 
 示例路径分两级：**第一级是板块目录**（`01-compiler`、`02-debugger`、
 `03-build-toolchain`、`04-syntax`、`05-oop`、`06-standard-library`），第二级是示例目录。

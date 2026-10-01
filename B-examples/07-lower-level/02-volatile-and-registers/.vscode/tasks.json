@@ -1,0 +1,106 @@
+{
+  // ===================================================================
+  //  示例 07-lower-level/02-volatile-and-registers · 寄存器与 volatile
+  //                                                  —— 构建任务
+  // ===================================================================
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CMake: 配置 (MinGW + GDB)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--preset", "mingw-gdb"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "CMake: 编译 (MinGW + GDB)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--build", "--preset", "mingw-gdb"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": "$gcc",
+      "presentation": { "reveal": "silent", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "构建: CMake (MinGW + GDB)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: 配置 (MinGW + GDB)",
+        "CMake: 编译 (MinGW + GDB)"
+      ],
+      "problemMatcher": [],
+      "detail": "配置并编译，产物 build/mingw/bin/app_cli.exe"
+    },
+
+    {
+      "label": "CMake: 配置 (MinGW, -O2)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--preset", "mingw-release"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "CMake: 编译 (MinGW, -O2)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--build", "--preset", "mingw-release"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": "$gcc",
+      "presentation": { "reveal": "silent", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "构建: CMake (MinGW, -O2)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: 配置 (MinGW, -O2)",
+        "CMake: 编译 (MinGW, -O2)"
+      ],
+      "problemMatcher": [],
+      "detail": "配置并编译，产物 build/mingw-release/bin/app_cli.exe"
+    },
+
+    {
+      "label": "汇编对照: -O0 vs -O2",
+      "type": "process",
+      "command": "pwsh",
+      "args": ["-NoProfile", "-File", "${workspaceFolder}/tools/asm-compare.ps1"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "always", "panel": "shared", "clear": true },
+      "detail": "编出两个目标文件并反汇编 vr_wait_volatile / vr_wait_plain"
+    },
+
+    {
+      "label": "CMake: 配置 (MSVC)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--preset", "msvc"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": [],
+      "presentation": { "reveal": "silent", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "CMake: 编译 (MSVC)",
+      "type": "process",
+      "command": "cmake",
+      "args": ["--build", "--preset", "msvc-debug"],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": "$msCompile",
+      "presentation": { "reveal": "silent", "panel": "shared", "clear": true }
+    },
+    {
+      "label": "构建: CMake (MSVC)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "CMake: 配置 (MSVC)",
+        "CMake: 编译 (MSVC)"
+      ],
+      "problemMatcher": [],
+      "detail": "配置并编译，产物 build/msvc/bin/Debug/app_cli.exe"
+    }
+  ]
+}

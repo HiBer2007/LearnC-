@@ -1,0 +1,65 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "mingw-gdb",
+      "displayName": "MinGW GCC/G++ + GDB (Ninja, Debug)",
+      "description": "gcc 编 C、g++ 编 C++ 并链接；产物 build/mingw/bin/app_cli.exe 与 app_cli_slim.exe",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/mingw",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "mingw-release",
+      "displayName": "MinGW GCC/G++ (Ninja, Release, -O2)",
+      "description": "看两个目标在 -O2 下的体积差别更清楚",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/mingw-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+      }
+    },
+    {
+      "name": "msvc",
+      "displayName": "MSVC (Visual Studio 17 2022, x64)",
+      "description": "cl.exe 编译；弱符号那一段在 MSVC 上走 /alternatename",
+      "generator": "Visual Studio 17 2022",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/msvc",
+      "cacheVariables": {
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "mingw-gdb",
+      "displayName": "编译 (MinGW + GDB)",
+      "configurePreset": "mingw-gdb"
+    },
+    {
+      "name": "mingw-release",
+      "displayName": "编译 (MinGW, -O2)",
+      "configurePreset": "mingw-release"
+    },
+    {
+      "name": "msvc-debug",
+      "displayName": "编译 (MSVC, Debug)",
+      "configurePreset": "msvc",
+      "configuration": "Debug"
+    }
+  ]
+}
