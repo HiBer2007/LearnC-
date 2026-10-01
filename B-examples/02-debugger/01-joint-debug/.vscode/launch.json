@@ -1,0 +1,135 @@
+{
+  // ===================================================================
+  //  示例 05 · 联合调试 —— 调试配置
+  //
+  //  这里演示的是「一个窗口里同时调试两个程序」：
+  //
+  //    ┌─────────────────────┐        TCP         ┌─────────────────────┐
+  //    │  Windows 客户端      │ ─────────────────→ │  Linux 服务端        │
+  //    │  client.exe          │ ←───────────────── │  server              │
+  //    │  GDB（本机）         │                    │  GDB（WSL 中）       │
+  //    └─────────────────────┘                    └─────────────────────┘
+  //
+  //  左边的 GDB 直接跑在 Windows 上。
+  //  右边的 GDB 跑在 WSL 里，通过 pipeTransport 用管道与 VS Code 通信——
+  //  这正是「跨系统调试」在 cpptools 中的实现方式。
+  //
+  //  使用方式：在「运行和调试」面板顶部的下拉框中选择
+  //    「联合调试: 客户端 + 服务端」
+  //  它会同时启动两个会话，两边的断点都会生效。
+  // ===================================================================
+  "version": "0.2.0",
+  "configurations": [
+    // ---------------------------------------------------------------
+    //  服务端：程序在 WSL 中运行，调试器也在 WSL 中
+    //
+    //  pipeTransport 的作用：
+    //    VS Code 把 MI 命令交给 pipeProgram（这里是 wsl.exe），
+    //    wsl.exe 在 Linux 侧启动 debuggerPath 指定的 gdb，
+    //    双方通过标准输入输出这条管道交换 MI 文本。
+    //
+    //  因此 program 与 cwd 必须写【Linux 侧路径】。
+    //  Windows 的 K:\ 在 WSL 中对应 /mnt/k/。
+    // ---------------------------------------------------------------
+    {
+      "name": "Linux 服务端 (WSL · gcc + gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+
+      // Linux 侧路径：Windows 的 K:\ 对应 WSL 的 /mnt/k/
+      "program": "/mnt/k/C相关课程/B-examples/02-debugger/01-joint-debug/server",
+      "args": [],
+      "cwd": "/mnt/k/C相关课程/B-examples/02-debugger/01-joint-debug",
+
+      "MIMode": "gdb",
+      "externalConsole": false,
+      "stopAtEntry": false,
+
+      // 把 GDB 报告的 Linux 路径映射回 Windows 路径，
+      // 否则 VS Code 找不到源文件，断点行号会对不上。
+      "sourceFileMap": {
+        "/mnt/k/": "K:\\"
+      },
+
+      // 通过 WSL 启动 Linux 侧的 GDB
+      "pipeTransport": {
+        "pipeCwd": "${workspaceFolder}",
+        "pipeProgram": "wsl.exe",
+        "pipeArgs": ["-d", "Ubuntu", "--"],
+        "debuggerPath": "/usr/bin/gdb",
+        "quoteArgs": false
+      },
+
+      "setupCommands": [
+        {
+          "description": "启用整齐打印（STL 容器可读显示）",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "关闭分页，避免输出中断",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        },
+        {
+          "description": "Linux 侧的 GDB 自带 libstdc++ 打印脚本，无需手工加路径",
+          "text": "python import libstdcxx.v6",
+          "ignoreFailures": true
+        }
+      ],
+
+      "preLaunchTask": "构建: 服务端 (WSL · gcc)"
+    },
+
+    // ---------------------------------------------------------------
+    //  客户端：程序与调试器都在 Windows 上，与普通单文件调试相同
+    // ---------------------------------------------------------------
+    {
+      "name": "Windows 客户端 (gcc + gdb)",
+      "type": "cppdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}\\build\\client.exe",
+      "args": ["127.0.0.1", "3", "4"],
+      "cwd": "${workspaceFolder}",
+      "MIMode": "gdb",
+      "externalConsole": false,
+      "stopAtEntry": false,
+      "setupCommands": [
+        {
+          "description": "启用整齐打印",
+          "text": "-enable-pretty-printing",
+          "ignoreFailures": true
+        },
+        {
+          "description": "关闭分页",
+          "text": "set pagination off",
+          "ignoreFailures": true
+        }
+      ],
+      "preLaunchTask": "构建: 客户端 (Windows · gcc)"
+    }
+  ],
+
+  // ===================================================================
+  //  复合启动：一个动作同时拉起多个调试会话
+  //
+  //  这是「联合调试」的核心机制。每个成员都会独立走完自己的
+  //  preLaunchTask → 启动 → 下断点流程，彼此互不干扰。
+  //
+  //  顺序说明：compounds 会并行启动各个成员，因此服务端尚未开始监听时
+  //  客户端可能已经发起连接。本示例的客户端会因此报「连接失败」。
+  //  解决办法见 README——在 main 的第一个断点处停一下即可，
+  //  这本身也正好演示了联合调试时观察时序的方式。
+  // ===================================================================
+  "compounds": [
+    {
+      "name": "联合调试: 客户端 + 服务端",
+      "configurations": [
+        "Linux 服务端 (WSL · gcc + gdb)",
+        "Windows 客户端 (gcc + gdb)"
+      ],
+      "stopAll": true,
+      "presentation": { "group": "联合调试", "order": 1 }
+    }
+  ]
+}

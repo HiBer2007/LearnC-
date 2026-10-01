@@ -555,12 +555,12 @@ cmake --build <构建目录>
 
 | 工程 | 配置 | 构建 | `app_gui_qt.exe` |
 |---|---|---|---|
-| `B-examples/07-cpp-class-basics` | 通过 | 通过 | 1,470,499 字节 |
-| `B-examples/08-cpp-inheritance-polymorphism` | 通过 | 通过 | 2,012,136 字节 |
-| `B-examples/10-qt-gui` | 通过 | 通过 | 92,662 字节 |
-| `C-空模板/06-CPP-类与对象` | 通过 | 通过 | 855,833 字节 |
-| `C-空模板/07-CPP-继承与多态` | 通过 | 通过 | 1,038,178 字节 |
-| `C-空模板/09-CPP-RAII与异常` | 通过 | 通过 | 842,646 字节 |
+| `B-examples/05-oop/01-cpp-class-basics` | 通过 | 通过 | 1,470,499 字节 |
+| `B-examples/05-oop/02-cpp-inheritance-polymorphism` | 通过 | 通过 | 2,012,136 字节 |
+| `B-examples/03-build-toolchain/03-qt-gui` | 通过 | 通过 | 92,662 字节 |
+| `C-templates/05-oop/01-cpp-class` | 通过 | 通过 | 855,833 字节 |
+| `C-templates/05-oop/02-cpp-inheritance` | 通过 | 通过 | 1,038,178 字节 |
+| `C-templates/05-oop/04-cpp-raii-exceptions` | 通过 | 通过 | 842,646 字节 |
 
 六个都真跑过，窗口全部正常出现：
 
@@ -580,7 +580,7 @@ C09: 存活=True  标题='空模板 09 · RAII 与异常（Qt 界面）'
 > 这一轮验证走的是 MinGW 路线，运行方式是把 `<Qt>\bin` 加进 PATH。
 > MSVC 路线的对应做法是把 `QT_ROOT` 换成 `msvc2022_64` 套件、
 > 生成器换成 Visual Studio，其余不变。
-> 自动部署只在 `B-examples/10-qt-gui` 上验证过，见第 3.5 小节。
+> 自动部署只在 `B-examples/03-build-toolchain/03-qt-gui` 上验证过，见第 3.5 小节。
 
 ---
 

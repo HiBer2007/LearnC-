@@ -19,16 +19,23 @@
 
 | 示例 | 形态 | 界面 | 服务板块 / 对应章节 | 演示重点 |
 |---|---|---|---|---|
-| [`01-c-single-file`](01-c-single-file/) | C 单文件 | 命令行 | `04-语法`：《04-语法/08-数组、指针与引用.md》第 1、2 节、《04-语法/05-初始化.md》第 4 节 | 指针、数组、初始化 |
-| [`02-cpp-single-file`](02-cpp-single-file/) | C++ 单文件 | 命令行 | `04-语法` 与 `05-类与面向对象`：《05-类与面向对象/02-类是一种类型.md》第 1 节、《05-类与面向对象/04-构造与析构.md》第 1 节 | 类、STL 容器、引用 |
-| [`03-CMake-C`](03-CMake-C/) | CMake 多文件（C） | 命令行 | `01-编译器` 与 `03-构建工具链`：《01-编译器/01-编译与链接.md》章节、《03-构建工具链/01-构建工具链.md》章节 | 跨文件单步、递归堆栈 |
-| [`04-CMake-CPP`](04-CMake-CPP/) | CMake 多文件（C++） | 命令行 | `01-编译器` 与 `03-构建工具链`：同示例 03，另加《05-类与面向对象/11-模板.md》第 5 节 | 同上，另加 STL 整齐打印 |
-| [`05-joint-debug`](05-joint-debug/) | 联合调试（Windows + Linux） | 命令行 | `02-调试器`：《02-调试器/02-跨系统调试.md》章节 | 一个窗口同时调试两个程序 |
-| [`06-cpp-language-core`](06-cpp-language-core/) | C++ 单文件，命令行小工具 | 命令行 | `04-语法`：《04-语法/03-常量与 const.md》第 2、3、5 节、《04-语法/05-初始化.md》第 2、5 节、《04-语法/11-作用域、生存期与链接.md》第 3 节、《04-语法/12-编译期能力.md》第 1 至 4 节 | `const` 正确性、初始化、引用与生存期、`constexpr` |
-| [`07-cpp-class-basics`](07-cpp-class-basics/) | CMake 多文件，值类型项目 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `05-类与面向对象`：《05-类与面向对象/04-构造与析构.md》第 1 至 3 节、《05-类与面向对象/05-拷贝与移动.md》第 2 至 5 节、《05-类与面向对象/09-运算符重载.md》第 2、3 节、《05-类与面向对象/03-成员与细节.md》第 1、2、4 节 | 自己写一个类：构造析构、拷贝移动、运算符、`const` 成员、静态成员 |
-| [`08-cpp-inheritance-polymorphism`](08-cpp-inheritance-polymorphism/) | CMake 多文件，抽象基类体系 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `05-类与面向对象`：《05-类与面向对象/07-继承.md》第 1、3、7 节、《05-类与面向对象/08-多态：重载、虚函数与它们的分工.md》第 3、4、5 节 | 继承、虚函数、虚析构、抽象基类、`override`、工厂 |
-| [`09-cpp-raii-and-templates`](09-cpp-raii-and-templates/) | CMake 多文件，小库 + 使用者 | 命令行 | `05-类与面向对象`：《05-类与面向对象/06-RAII 与资源管理.md》第 2 至 4 节、《05-类与面向对象/11-模板.md》第 2、4、5、6 节 | RAII 包装（自己写句柄类）、函数模板与类模板、一次全特化 |
-| [`10-qt-gui`](10-qt-gui/) | CMake 工程，Qt 最小示例（单文件） | GUI（仅 **Qt**） | `03-构建工具链`：《03-构建工具链/03-包管理.md》章节；`05-类与面向对象`：《05-类与面向对象/10-lambda 与函数对象.md》第 1 节 | 把 Qt 接进 CMake 工程：`WITH_QT` 开关、静态链接、信号与槽用 lambda 连接 |
+| [`01-compiler/01-c-single-file`](01-compiler/01-c-single-file/) | C 单文件 | 命令行 | `04-语法`：《04-语法/08-数组、指针与引用.md》第 1、2 节、《04-语法/05-初始化.md》第 4 节 | 指针、数组、初始化 |
+| [`01-compiler/02-cpp-single-file`](01-compiler/02-cpp-single-file/) | C++ 单文件 | 命令行 | `04-语法` 与 `05-类与面向对象`：《05-类与面向对象/02-类是一种类型.md》第 1 节、《05-类与面向对象/04-构造与析构.md》第 1 节 | 类、STL 容器、引用 |
+| [`02-debugger/01-joint-debug`](02-debugger/01-joint-debug/) | 联合调试（Windows + Linux） | 命令行 | `02-调试器`：《02-调试器/02-跨系统调试.md》章节 | 一个窗口同时调试两个程序 |
+| [`03-build-toolchain/01-cmake-c`](03-build-toolchain/01-cmake-c/) | CMake 多文件（C） | 命令行 | `01-编译器` 与 `03-构建工具链`：《01-编译器/01-编译与链接.md》章节、《03-构建工具链/01-构建工具链.md》章节 | 跨文件单步、递归堆栈 |
+| [`03-build-toolchain/02-cmake-cpp`](03-build-toolchain/02-cmake-cpp/) | CMake 多文件（C++） | 命令行 | `01-编译器` 与 `03-构建工具链`：同 `01-cmake-c`，另加《05-类与面向对象/11-模板.md》第 5 节 | 同上，另加 STL 整齐打印 |
+| [`03-build-toolchain/03-qt-gui`](03-build-toolchain/03-qt-gui/) | CMake 工程，Qt 最小示例（单文件） | GUI（仅 **Qt**） | `03-构建工具链`：《03-构建工具链/03-包管理.md》章节；`05-类与面向对象`：《05-类与面向对象/10-lambda 与函数对象.md》第 1 节 | 把 Qt 接进 CMake 工程：`WITH_QT` 开关、静态链接、信号与槽用 lambda 连接 |
+| [`04-syntax/01-cpp-language-core`](04-syntax/01-cpp-language-core/) | C++ 单文件，命令行小工具 | 命令行 | `04-语法`：《04-语法/03-常量与 const.md》第 2、3、5 节、《04-语法/05-初始化.md》第 2、5 节、《04-语法/11-作用域、生存期与链接.md》第 3 节、《04-语法/12-编译期能力.md》第 1 至 4 节 | `const` 正确性、初始化、引用与生存期、`constexpr` |
+| [`05-oop/01-cpp-class-basics`](05-oop/01-cpp-class-basics/) | CMake 多文件，值类型项目 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `05-类与面向对象`：《05-类与面向对象/04-构造与析构.md》第 1 至 3 节、《05-类与面向对象/05-拷贝与移动.md》第 2 至 5 节、《05-类与面向对象/09-运算符重载.md》第 2、3 节、《05-类与面向对象/03-成员与细节.md》第 1、2、4 节 | 自己写一个类：构造析构、拷贝移动、运算符、`const` 成员、静态成员 |
+| [`05-oop/02-cpp-inheritance-polymorphism`](05-oop/02-cpp-inheritance-polymorphism/) | CMake 多文件，抽象基类体系 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `05-类与面向对象`：《05-类与面向对象/07-继承.md》第 1、3、7 节、《05-类与面向对象/08-多态：重载、虚函数与它们的分工.md》第 3、4、5 节 | 继承、虚函数、虚析构、抽象基类、`override`、工厂 |
+| [`05-oop/03-cpp-raii-and-templates`](05-oop/03-cpp-raii-and-templates/) | CMake 多文件，小库 + 使用者 | 命令行 | `05-类与面向对象`：《05-类与面向对象/06-RAII 与资源管理.md》第 2 至 4 节、《05-类与面向对象/11-模板.md》第 2、4、5、6 节 | RAII 包装（自己写句柄类）、函数模板与类模板、一次全特化 |
+
+示例路径分两级：**第一级是板块目录**（`01-compiler`、`02-debugger`、
+`03-build-toolchain`、`04-syntax`、`05-oop`），第二级是示例目录。
+**板块目录一律用 ASCII 名**，因为示例工程会被构建工具读取，
+而 CMake 的 `file(STRINGS)` 与 Qt 的 `syncqt` 在非 ASCII 路径下会失败。
+
+
 
 每个示例内均提供 `README.md`，写明了「先读教材哪几节」「这个项目要解决什么问题」
 「做完能掌握什么」「分阶段的推进路线」「构建命令」「运行后应当看到什么（含真实输出）」
@@ -41,9 +48,9 @@
 > STL 与调试直接相关：GDB 默认无法识别 `vector` 的内部结构，
 > 会将其显示为一组内部指针。让 STL 整齐显示的关键是 `setupCommands` 中的
 > `-enable-pretty-printing`，以及另外两条真正使其生效的 `python` 命令
-> （详见 [`02-cpp-single-file/README.md`](02-cpp-single-file/README.md) 的实测对比）。
+> （详见 [`01-compiler/02-cpp-single-file/README.md`](01-compiler/02-cpp-single-file/README.md) 的实测对比）。
 >
-> **关于示例 05**：它需要 WSL 环境。搭建方法、原理与远程调试见《02-调试器/02-跨系统调试.md》。
+> **关于 `02-debugger/01-joint-debug`**：它需要 WSL 环境。搭建方法、原理与远程调试见《02-调试器/02-跨系统调试.md》。
 > 该示例演示 Windows 客户端与 Linux 服务端在同一窗口中的联合调试，
 > 并已验证端到端可用。
 
@@ -58,14 +65,14 @@
 VS Code **只识别工作区根目录的 `.vscode`**。
 
 ```
-正确：文件 → 打开文件夹 → 选中  B-examples\01-c-single-file
+正确：文件 → 打开文件夹 → 选中  B-examples\01-compiler\01-c-single-file
          → 使用的是 01 自带的 .vscode，F5 正常工作
 
 错误：打开  B-examples  或  C相关课程  这一层文件夹
          → 使用的是上层的 .vscode，示例自带的配置不生效
 ```
 
-若在**根工作区**中直接打开 `03-CMake-C/src/main.c` 并按 F5，
+若在**根工作区**中直接打开 `03-build-toolchain/01-cmake-c/src/main.c` 并按 F5，
 使用的将是根目录下的“单文件”配置：该配置会试图把 `main.c` 当作单文件单独编译，
 而 `main.c` 调用了 `calc.c` 中的函数，因此会出现**链接失败**：
 
@@ -83,10 +90,10 @@ undefined reference to `add'
 `PowerShell`
 
 ```powershell
-# 06：单文件（在 06-cpp-language-core 目录下）
+# 单文件（在 04-syntax/01-cpp-language-core 目录下）
 g++ -std=gnu++17 -g -O0 -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK main.cpp -o build\gcc\main.exe
 
-# 07、08、09：CMake 工程（在对应示例目录下）
+# CMake 工程（在对应示例目录下）
 cmake --preset mingw-gdb
 cmake --build --preset mingw-gdb
 
@@ -150,15 +157,15 @@ cmake --build --preset msvc-debug
 每个示例的产物均位于**各自的 `build/` 子目录**中，互不干扰：
 
 ```
-01-c-single-file\build\gcc\main.exe              ← gcc 路线
-01-c-single-file\build\msvc\main.exe             ← MSVC 路线（另有 .pdb）
+01-compiler\01-c-single-file\build\gcc\main.exe              ← gcc 路线
+01-compiler\01-c-single-file\build\msvc\main.exe             ← MSVC 路线（另有 .pdb）
 
-03-CMake-C\build\mingw\bin\app.exe               ← Ninja 生成器
-03-CMake-C\build\msvc\bin\Debug\app.exe          ← VS 生成器（多一层 Debug）
+03-build-toolchain\01-cmake-c\build\mingw\bin\app.exe        ← Ninja 生成器
+03-build-toolchain\01-cmake-c\build\msvc\bin\Debug\app.exe   ← VS 生成器（多一层 Debug）
 
-07-cpp-class-basics\build\mingw\bin\app_cli.exe        ← 命令行版
-07-cpp-class-basics\build\mingw\bin\app_gui_win32.exe  ← GUI 版（Win32，默认构建）
-07-cpp-class-basics\build\mingw\bin\app_gui_qt.exe     ← GUI 版（Qt，WITH_QT=ON 才有）
+05-oop\01-cpp-class-basics\build\mingw\bin\app_cli.exe        ← 命令行版
+05-oop\01-cpp-class-basics\build\mingw\bin\app_gui_win32.exe  ← GUI 版（Win32，默认构建）
+05-oop\01-cpp-class-basics\build\mingw\bin\app_gui_qt.exe     ← GUI 版（Qt，WITH_QT=ON 才有）
 ```
 
 `build/` 目录可以随时删除，重新按 F5 时会自动重建；
@@ -183,7 +190,7 @@ cmake --build --preset msvc-debug
 > `/source-charset:utf-8` 与 `/execution-charset:utf-8` 的合并写法，
 > 会把执行字符集也设为 UTF-8，中文同样会乱码。
 
-> **注意**：GUI 示例（07、08）里的宽字符串不受上述窄字符集选项影响：
+> **注意**：GUI 示例（`05-oop/01-cpp-class-basics`、`05-oop/02-cpp-inheritance-polymorphism`）里的宽字符串不受上述窄字符集选项影响：
 > Win32 版的窗口与控件一律用 `W` 结尾的宽字符版本，源码中的 `L"中文"` 由
 > gcc 按 UTF-16 写入 exe；核心模块返回的窄字符串再由
 > `MultiByteToWideChar(CP_ACP, ...)` 转成宽字符显示。
@@ -191,7 +198,7 @@ cmake --build --preset msvc-debug
 
 ### 七、关于 GUI 示例：每个都有两份界面
 
-07 与 08 各带**两份功能相同的界面**，读者按需要挑一份：
+`05-oop/01-cpp-class-basics` 与 `05-oop/02-cpp-inheritance-polymorphism` 各带**两份功能相同的界面**，读者按需要挑一份：
 
 | | Win32 版 | Qt 版 |
 |---|---|---|
@@ -211,10 +218,10 @@ cmake --build --preset msvc-debug
 + `app_gui_win32`（`add_executable(app_gui_win32 WIN32 ...)`，另链接 `user32` 与 `gdi32`）
 + `app_gui_qt`（`add_executable(app_gui_qt WIN32 ...)`，链接 `Qt6::Widgets`）。
 
-另有 [`10-qt-gui`](10-qt-gui/)：它是一个**独立的 Qt 最小示例**，
+另有 [`03-build-toolchain/03-qt-gui`](03-build-toolchain/03-qt-gui/)：它是一个**独立的 Qt 最小示例**，
 只演示「把 Qt 接进 CMake 工程」这件事（`WITH_QT` 开关、静态链接、信号与槽），只有 Qt 一份界面。
-07 与 08 的 Qt 版则是**范例的 Qt 前端**，与各自的 Win32 版功能相同、共用同一个 `core`。
-两者互补：先看 10 号弄清怎么接线，再看 07、08 的 `main_gui_qt.cpp` 看真实界面怎么写。
+上述两个示例的 Qt 版则是**范例的 Qt 前端**，与各自的 Win32 版功能相同、共用同一个 `core`。
+两者互补：先看 `03-build-toolchain/03-qt-gui` 弄清怎么接线，再看 `05-oop/01-cpp-class-basics` 与 `05-oop/02-cpp-inheritance-polymorphism` 的 `main_gui_qt.cpp` 看真实界面怎么写。
 
 **`WITH_QT` 默认为 `OFF`**：没有 Qt 时工程照常配置、照常构建命令行版与 Win32 版，
 不会报错。要看 Qt 版：
@@ -251,4 +258,25 @@ GUI 的结果只在窗口里，肉眼看不等于验证过。仓库提供了
 MinGW 路线（`cppdbg`）没有这一层。路径写错时 F5 会提示找不到程序，
 按上一节的产物位置表核对即可。
 
-如需**自行练习配置过程**，可使用同级的 [`空模板`](../C-空模板/) 文件夹。
+如需**自行练习配置过程**，可使用同级的 [`C-templates`](../C-templates/) 文件夹。
+
+---
+
+## 附录：历史序号对照
+
+重排前示例按 `01` 至 `10` 的扁平编号排列，重排后该编号已不存在。
+**源文件头的注释、`.vscode` 配置里的注释与程序的真实输出（命令行横幅、窗口标题）中仍写着旧编号**，
+因为这些属于示例自身的文字，本次整理没有改动。下表供对照旧笔记与旧提交信息。
+
+| 旧编号 | 现路径 |
+|---|---|
+| `01` | `01-compiler/01-c-single-file` |
+| `02` | `01-compiler/02-cpp-single-file` |
+| `03` | `03-build-toolchain/01-cmake-c` |
+| `04` | `03-build-toolchain/02-cmake-cpp` |
+| `05` | `02-debugger/01-joint-debug` |
+| `06` | `04-syntax/01-cpp-language-core` |
+| `07` | `05-oop/01-cpp-class-basics` |
+| `08` | `05-oop/02-cpp-inheritance-polymorphism` |
+| `09` | `05-oop/03-cpp-raii-and-templates` |
+| `10` | `03-build-toolchain/03-qt-gui` |

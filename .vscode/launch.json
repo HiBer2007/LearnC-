@@ -10,7 +10,7 @@
   //
   //  ── 为什么 CMake 示例要单独打开？ ──
   //    VS Code 只认【工作区根目录】的 .vscode。像
-  //    B-examples\03-CMake-C\src\main.c 这种文件，在上层工作区打开时，
+  //    B-examples\03-build-toolchain\01-cmake-c\src\main.c 这种文件，在上层工作区打开时，
   //    用的是【上层】的配置（也就是本文件）——它会把这个 .c 当单文件编译，
   //    而它调用了同工程别的 .c，于是链接失败：
   //        undefined reference to `add'

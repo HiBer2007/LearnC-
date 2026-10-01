@@ -32,7 +32,7 @@
 
 .EXAMPLE
     $env:QT_ROOT = '<Qt>/6.11.1/mingw_64'
-    pwsh -File .\检查Qt.ps1 -ProjectDir ..\..\B-examples\10-qt-gui
+    pwsh -File .\检查Qt.ps1 -ProjectDir ..\..\B-examples\03-build-toolchain\03-qt-gui
 #>
 [CmdletBinding()]
 param(

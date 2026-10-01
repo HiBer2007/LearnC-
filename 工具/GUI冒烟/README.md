@@ -42,7 +42,7 @@ pwsh -File <工作区>\工具\GUI冒烟\GUI冒烟.ps1 -Exe <程序路径> -Windo
 
 ## 两个真实用例
 
-### 用例一：`B-examples/07-cpp-class-basics` 的 Win32 界面
+### 用例一：`B-examples/05-oop/01-cpp-class-basics` 的 Win32 界面
 
 先把示例构建好（见该示例的 README），再运行：
 
@@ -50,10 +50,10 @@ pwsh -File <工作区>\工具\GUI冒烟\GUI冒烟.ps1 -Exe <程序路径> -Windo
 
 ```powershell
 cd <工作区>
-cmake --build B-examples\07-cpp-class-basics\build\mingw        # 若还没构建过，先 cmake --preset mingw-gdb
+cmake --build B-examples\05-oop\01-cpp-class-basics\build\mingw        # 若还没构建过，先 cmake --preset mingw-gdb
 
 pwsh -File 工具\GUI冒烟\GUI冒烟.ps1 `
-  -Exe B-examples\07-cpp-class-basics\build\mingw\bin\app_gui_win32.exe `
+  -Exe B-examples\05-oop\01-cpp-class-basics\build\mingw\bin\app_gui_win32.exe `
   -WindowTitle "IntVector" -InputId 1001 -Text "3 1 4 1 5 9 2 6" -ClickId 1002 -ReadId 1004
 ```
 
@@ -61,7 +61,7 @@ pwsh -File 工具\GUI冒烟\GUI冒烟.ps1 `
 `Text`
 
 ```text
-[进程] pid=51068  程序=K:\C相关课程\B-examples\07-cpp-class-basics\build\mingw\bin\app_gui_win32.exe
+[进程] pid=51068  程序=K:\C相关课程\B-examples\05-oop\01-cpp-class-basics\build\mingw\bin\app_gui_win32.exe
 [窗口] 标题=[示例 07 · IntVector 值类型演示]  类名=IntVectorDemoWnd  客户区=720x620
 [控件] 共 6 个
         id=0     类名=Static   文本=[输入（空格、逗号或分号分隔的整数，最多 64 个）：]
@@ -85,7 +85,7 @@ pwsh -File 工具\GUI冒烟\GUI冒烟.ps1 `
 结果框里的数列与命令行版一致，说明界面确实把输入交给了核心模块，
 并且把核心模块的结果显示了出来。
 
-### 用例二：`B-examples/08-cpp-inheritance-polymorphism` 的自绘面板
+### 用例二：`B-examples/05-oop/02-cpp-inheritance-polymorphism` 的自绘面板
 
 这个例子的格式面板是 GDI 自己画的，不是标准控件，因此用 `-ClickAt` 点坐标，
 再用 `-ColorCount` 确认面板真的画出来了：
@@ -94,7 +94,7 @@ pwsh -File 工具\GUI冒烟\GUI冒烟.ps1 `
 
 ```powershell
 pwsh -File 工具\GUI冒烟\GUI冒烟.ps1 `
-  -Exe B-examples\08-cpp-inheritance-polymorphism\build\mingw\bin\app_gui_win32.exe `
+  -Exe B-examples\05-oop\02-cpp-inheritance-polymorphism\build\mingw\bin\app_gui_win32.exe `
   -WindowTitle "导出器" -ClickAt "522,60" -ReadId 3004 `
   -Shot "$env:TEMP\gui08.png" -ColorCount "240,248,242"
 ```
@@ -103,7 +103,7 @@ pwsh -File 工具\GUI冒烟\GUI冒烟.ps1 `
 `Text`
 
 ```text
-[进程] pid=50736  程序=K:\C相关课程\B-examples\08-cpp-inheritance-polymorphism\build\mingw\bin\app_gui_win32.exe
+[进程] pid=50736  程序=K:\C相关课程\B-examples\05-oop\02-cpp-inheritance-polymorphism\build\mingw\bin\app_gui_win32.exe
 [窗口] 标题=[示例 08 · 导出器：抽象基类、工厂与虚析构]  类名=ExporterDemoWnd  客户区=780x600
 [控件] 共 6 个
         id=0     类名=Static   文本=[渲染结果（只读）：]
