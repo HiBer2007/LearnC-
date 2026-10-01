@@ -361,7 +361,23 @@ C相关课程/
 | CMake | 4.4.3 |
 | Ninja | 1.13.2 |
 | MSVC cl.exe | 19.44（VS 生成工具 2022） |
-| pwsh | 7.6.3 |
+| pwsh | 7.6.6 |
+
+### 嵌入式工具链
+
+交叉编译与仿真在 **WSL 的 Ubuntu** 里跑，烧写与调试用 Windows 侧的 OpenOCD
+（真板实测的细节见《01-编译器/03-嵌入式与交叉编译.md》第 9 节）。
+
+| 工具 | 版本 | 在哪一侧 |
+|---|---|---|
+| `arm-none-eabi-gcc` | 13.2.1 | WSL |
+| `qemu-system-arm` | 8.2.2 | WSL |
+| `gdb-multiarch` | 15.1 | WSL |
+| OpenOCD | 0.12.0 | Windows |
+
+**真板**：STM32F103C8 最小系统板 + CMSIS-DAP 调试器（Cortex-M3，64 KiB flash、20 KiB RAM，
+时钟源实测为 HSI 8 MHz）。板上只有 MCU 与晶振，因此输出走 semihosting；
+涉及外设时序的结论一律标 `待确认`。
 
 ### 编辑器扩展
 
