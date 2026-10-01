@@ -29,24 +29,24 @@
 | [`05-oop/01-cpp-class-basics`](05-oop/01-cpp-class-basics/) | CMake 多文件，值类型项目 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `05-类与面向对象`：《05-类与面向对象/04-构造与析构.md》第 1 至 3 节、《05-类与面向对象/05-拷贝与移动.md》第 2 至 5 节、《05-类与面向对象/09-运算符重载.md》第 2、3 节、《05-类与面向对象/03-成员与细节.md》第 1、2、4 节 | 自己写一个类：构造析构、拷贝移动、运算符、`const` 成员、静态成员 |
 | [`05-oop/02-cpp-inheritance-polymorphism`](05-oop/02-cpp-inheritance-polymorphism/) | CMake 多文件，抽象基类体系 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `05-类与面向对象`：《05-类与面向对象/07-继承.md》第 1、3、7 节、《05-类与面向对象/08-多态：重载、虚函数与它们的分工.md》第 3、4、5 节 | 继承、虚函数、虚析构、抽象基类、`override`、工厂 |
 | [`05-oop/03-cpp-raii-and-templates`](05-oop/03-cpp-raii-and-templates/) | CMake 多文件，小库 + 使用者 | 命令行 | `05-类与面向对象`：《05-类与面向对象/06-RAII 与资源管理.md》第 2 至 4 节、《05-类与面向对象/11-模板.md》第 2、4、5、6 节 | RAII 包装（自己写句柄类）、函数模板与类模板、一次全特化 |
-| [`06-standard-library/01-c-stdlib-toolbox`](06-standard-library/01-c-stdlib-toolbox/) | CMake 多文件（C） | 命令行 + GUI（**Win32**） | `06-标准库`：《06-标准库/A-01-输入输出：stdio.md》第 4.3、5.2 小节、《06-标准库/A-02-字符串与内存：string.h.md》第 3.2、5.2 小节、《06-标准库/A-05-工具与其它：stdlib 与杂项.md》第 2 节 | 与 `02` 读同一份输入、出同一份报表的 C 版：`fgets` 逐行读、`strspn` 分词、`strtol` 三件套、`qsort` 比较函数 |
-| [`06-standard-library/02-cpp-io-report`](06-standard-library/02-cpp-io-report/) | CMake 多文件（C++） | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `06-标准库`：《06-标准库/B-01-输入输出：iostream.md》第 3.1、6.1、7.1 小节、《06-标准库/B-02-std-string 与 string_view.md》第 7.2 小节 | 与 `01` 做同一件事、报表逐字节相同的 C++ 版：`fstream` / `sstream` / `iomanip` |
-| [`06-standard-library/03-cpp-string-text`](06-standard-library/03-cpp-string-text/) | CMake 多文件 | 命令行 | `06-标准库`：《06-标准库/B-02-std-string 与 string_view.md》第 3.2、4.4、6.2 小节 | `std::string` 切分与替换、`string_view` 零拷贝与失效、UTF-8 按字符边界截断 |
-| [`06-standard-library/04-cpp-smart-pointers`](06-standard-library/04-cpp-smart-pointers/) | CMake 多文件 | 命令行 | `06-标准库`：《06-标准库/B-03-智能指针的用法.md》第 1.3、2.2、3.1 小节、《06-标准库/B-04-可调用物的包装.md》第 1 节 | `unique_ptr` 工厂、`shared_ptr` 引用计数、`weak_ptr` 断环、`std::function` 回调注册表 |
-| [`06-standard-library/05-cpp-numeric-random`](06-standard-library/05-cpp-numeric-random/) | CMake 多文件 | 命令行 + GUI（**Win32**） | `06-标准库`：《06-标准库/B-05-数值.md》第 4、5 节、《06-标准库/A-03-数值、数学与随机.md》第 4 节 | `<random>` 引擎与分布、`<numeric>` 统计、直方图，以及与 `rand()` 的两条弱证据对照 |
-| [`06-standard-library/06-cpp-chrono-benchmark`](06-standard-library/06-cpp-chrono-benchmark/) | CMake 多文件 | 命令行 | `06-标准库`：《06-标准库/B-06-时间：chrono.md》第 2、3 节、《06-标准库/B-10-内存与并发的基础设施.md》第 5 节 | `steady_clock` 测耗时、预热与多次测量、分位数，`atomic` 记迭代次数 |
-| [`06-standard-library/07-cpp-filesystem-scan`](06-standard-library/07-cpp-filesystem-scan/) | CMake 多文件 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `06-标准库`：《06-标准库/B-07-文件系统：filesystem.md》第 1、3、5 节 | `<filesystem>` 遍历目录与属性统计、`error_code` 与异常两条错误路线 |
-| [`06-standard-library/08-cpp-config-parser`](06-standard-library/08-cpp-config-parser/) | CMake 多文件 | 命令行 | `06-标准库`：《06-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 2、3、4 节、《06-标准库/B-09-工具类（下）：type_traits 与 concepts.md》第 1 节 | `tuple` / `optional` / `variant` 表示配置值，类型特征决定 `get<T>()` 能否取用 |
-| [`06-standard-library/09-stdlib-capstone`](06-standard-library/09-stdlib-capstone/) | CMake 多文件，综合 | 命令行 | `06-标准库`：《06-标准库/B-01-输入输出：iostream.md》第 6、7 节、《06-标准库/B-02-std-string 与 string_view.md》第 3、6 节、《06-标准库/B-06-时间：chrono.md》第 3 节（综合前八个示例） | 读文件到出报表的整条流水线：解析、计算、计时、报表，把前八份的能力串起来 |
-| [`07-lower-level/01-layout-and-align`](07-lower-level/01-layout-and-align/) | CMake 多文件（C++） | 命令行 | `07-更底层`：《07-更底层/01-对象在哪里：栈、堆与静态区.md》第 1.1、1.2、1.3 小节、《07-更底层/02-对齐、填充与缓存.md》第 2.1、3.2 小节 | 六类对象的地址、`sizeof` / `offsetof` 对照、`packed` 与 `alignas`、伪共享计时 |
-| [`07-lower-level/02-volatile-and-registers`](07-lower-level/02-volatile-and-registers/) | CMake 多文件（C）+ 交叉编译 | 命令行（含 semihosting） | `07-更底层`：《07-更底层/03-寄存器、位与 volatile.md》第 1.4、2.1、2.3 小节 | 同一段轮询代码带与不带 `volatile` 的 `-O0` / `-O2` 反汇编对照，真板上 `mww` 与 SysTick 两种触发各跑一遍 |
-| [`07-lower-level/03-bare-metal-boot`](07-lower-level/03-bare-metal-boot/) | 交叉编译（C + 汇编 + 链接脚本） | 命令行（含 semihosting） | `07-更底层`：《07-更底层/07-链接脚本与启动代码.md》第 1.2、2.4、2.6、3.3 小节 | 自己的链接脚本与向量表：段表、`Reset_Handler`、`.data` / `.bss`，QEMU 与真板两种跑法 |
-| [`07-lower-level/04-symbols-and-linking`](07-lower-level/04-symbols-and-linking/) | CMake 多文件（C + C++） | 命令行 | `07-更底层`：《07-更底层/06-符号与链接属性.md》第 1.2、4.2、6.1 小节 | 弱符号覆盖、静态库成员粒度与产物大小、`extern "C"` 与修饰名 |
-| [`07-lower-level/05-interrupt-and-atomic`](07-lower-level/05-interrupt-and-atomic/) | CMake 多文件（C++）+ 交叉编译 | 命令行（含 semihosting） | `07-更底层`：《07-更底层/10-中断、并发与内存序.md》第 2.1、2.2、3.4 小节 | 丢更新复现与三种修法（关中断 / 临界区 / 原子量）、真板上的中断延迟测量 |
-| [`07-lower-level/06-binary-tools`](07-lower-level/06-binary-tools/) | CMake 多文件（C） | 命令行 | `07-更底层`：《07-更底层/13-收尾：什么时候需要下到这一层.md》第 1.1、1.4 小节、《07-更底层/09-C++ 对象布局与它的硬件代价.md》第 2.1、2.4 小节 | 把 `nm` / `objdump` / `size` / `readelf` 的输出解析成结论，PE 与 ELF 两种产物都能看 |
+| [`07-standard-library/01-c-stdlib-toolbox`](07-standard-library/01-c-stdlib-toolbox/) | CMake 多文件（C） | 命令行 + GUI（**Win32**） | `07-标准库`：《07-标准库/A-01-输入输出：stdio.md》第 4.3、5.2 小节、《07-标准库/A-02-字符串与内存：string.h.md》第 3.2、5.2 小节、《07-标准库/A-05-工具与其它：stdlib 与杂项.md》第 2 节 | 与 `02` 读同一份输入、出同一份报表的 C 版：`fgets` 逐行读、`strspn` 分词、`strtol` 三件套、`qsort` 比较函数 |
+| [`07-standard-library/02-cpp-io-report`](07-standard-library/02-cpp-io-report/) | CMake 多文件（C++） | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `07-标准库`：《07-标准库/B-01-输入输出：iostream.md》第 3.1、6.1、7.1 小节、《07-标准库/B-02-std-string 与 string_view.md》第 7.2 小节 | 与 `01` 做同一件事、报表逐字节相同的 C++ 版：`fstream` / `sstream` / `iomanip` |
+| [`07-standard-library/03-cpp-string-text`](07-standard-library/03-cpp-string-text/) | CMake 多文件 | 命令行 | `07-标准库`：《07-标准库/B-02-std-string 与 string_view.md》第 3.2、4.4、6.2 小节 | `std::string` 切分与替换、`string_view` 零拷贝与失效、UTF-8 按字符边界截断 |
+| [`07-standard-library/04-cpp-smart-pointers`](07-standard-library/04-cpp-smart-pointers/) | CMake 多文件 | 命令行 | `07-标准库`：《07-标准库/B-03-智能指针的用法.md》第 1.3、2.2、3.1 小节、《07-标准库/B-04-可调用物的包装.md》第 1 节 | `unique_ptr` 工厂、`shared_ptr` 引用计数、`weak_ptr` 断环、`std::function` 回调注册表 |
+| [`07-standard-library/05-cpp-numeric-random`](07-standard-library/05-cpp-numeric-random/) | CMake 多文件 | 命令行 + GUI（**Win32**） | `07-标准库`：《07-标准库/B-05-数值.md》第 4、5 节、《07-标准库/A-03-数值、数学与随机.md》第 4 节 | `<random>` 引擎与分布、`<numeric>` 统计、直方图，以及与 `rand()` 的两条弱证据对照 |
+| [`07-standard-library/06-cpp-chrono-benchmark`](07-standard-library/06-cpp-chrono-benchmark/) | CMake 多文件 | 命令行 | `07-标准库`：《07-标准库/B-06-时间：chrono.md》第 2、3 节、《07-标准库/B-10-内存与并发的基础设施.md》第 5 节 | `steady_clock` 测耗时、预热与多次测量、分位数，`atomic` 记迭代次数 |
+| [`07-standard-library/07-cpp-filesystem-scan`](07-standard-library/07-cpp-filesystem-scan/) | CMake 多文件 | 命令行 + GUI（**Win32** 与 **Qt** 两份） | `07-标准库`：《07-标准库/B-07-文件系统：filesystem.md》第 1、3、5 节 | `<filesystem>` 遍历目录与属性统计、`error_code` 与异常两条错误路线 |
+| [`07-standard-library/08-cpp-config-parser`](07-standard-library/08-cpp-config-parser/) | CMake 多文件 | 命令行 | `07-标准库`：《07-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 2、3、4 节、《07-标准库/B-09-工具类（下）：type_traits 与 concepts.md》第 1 节 | `tuple` / `optional` / `variant` 表示配置值，类型特征决定 `get<T>()` 能否取用 |
+| [`07-standard-library/09-stdlib-capstone`](07-standard-library/09-stdlib-capstone/) | CMake 多文件，综合 | 命令行 | `07-标准库`：《07-标准库/B-01-输入输出：iostream.md》第 6、7 节、《07-标准库/B-02-std-string 与 string_view.md》第 3、6 节、《07-标准库/B-06-时间：chrono.md》第 3 节（综合前八个示例） | 读文件到出报表的整条流水线：解析、计算、计时、报表，把前八份的能力串起来 |
+| [`06-lower-level/01-layout-and-align`](06-lower-level/01-layout-and-align/) | CMake 多文件（C++） | 命令行 | `06-更底层`：《06-更底层/01-对象在哪里：栈、堆与静态区.md》第 1.1、1.2、1.3 小节、《06-更底层/02-对齐、填充与缓存.md》第 2.1、3.2 小节 | 六类对象的地址、`sizeof` / `offsetof` 对照、`packed` 与 `alignas`、伪共享计时 |
+| [`06-lower-level/02-volatile-and-registers`](06-lower-level/02-volatile-and-registers/) | CMake 多文件（C）+ 交叉编译 | 命令行（含 semihosting） | `06-更底层`：《06-更底层/03-寄存器、位与 volatile.md》第 1.4、2.1、2.3 小节 | 同一段轮询代码带与不带 `volatile` 的 `-O0` / `-O2` 反汇编对照，真板上 `mww` 与 SysTick 两种触发各跑一遍 |
+| [`06-lower-level/03-bare-metal-boot`](06-lower-level/03-bare-metal-boot/) | 交叉编译（C + 汇编 + 链接脚本） | 命令行（含 semihosting） | `06-更底层`：《06-更底层/07-链接脚本与启动代码.md》第 1.2、2.4、2.6、3.3 小节 | 自己的链接脚本与向量表：段表、`Reset_Handler`、`.data` / `.bss`，QEMU 与真板两种跑法 |
+| [`06-lower-level/04-symbols-and-linking`](06-lower-level/04-symbols-and-linking/) | CMake 多文件（C + C++） | 命令行 | `06-更底层`：《06-更底层/06-符号与链接属性.md》第 1.2、4.2、6.1 小节 | 弱符号覆盖、静态库成员粒度与产物大小、`extern "C"` 与修饰名 |
+| [`06-lower-level/05-interrupt-and-atomic`](06-lower-level/05-interrupt-and-atomic/) | CMake 多文件（C++）+ 交叉编译 | 命令行（含 semihosting） | `06-更底层`：《06-更底层/10-中断、并发与内存序.md》第 2.1、2.2、3.4 小节 | 丢更新复现与三种修法（关中断 / 临界区 / 原子量）、真板上的中断延迟测量 |
+| [`06-lower-level/06-binary-tools`](06-lower-level/06-binary-tools/) | CMake 多文件（C） | 命令行 | `06-更底层`：《06-更底层/13-收尾：什么时候需要下到这一层.md》第 1.1、1.4 小节、《06-更底层/09-C++ 对象布局与它的硬件代价.md》第 2.1、2.4 小节 | 把 `nm` / `objdump` / `size` / `readelf` 的输出解析成结论，PE 与 ELF 两种产物都能看 |
 
 示例路径分两级：**第一级是板块目录**（`01-compiler`、`02-debugger`、
-`03-build-toolchain`、`04-syntax`、`05-oop`、`06-standard-library`），第二级是示例目录。
+`03-build-toolchain`、`04-syntax`、`05-oop`、`07-standard-library`），第二级是示例目录。
 **板块目录一律用 ASCII 名**，因为示例工程会被构建工具读取，
 而 CMake 的 `file(STRINGS)` 与 Qt 的 `syncqt` 在非 ASCII 路径下会失败。
 
@@ -182,9 +182,9 @@ cmake --build --preset msvc-debug
 05-oop\01-cpp-class-basics\build\mingw\bin\app_gui_win32.exe  ← GUI 版（Win32，默认构建）
 05-oop\01-cpp-class-basics\build\mingw\bin\app_gui_qt.exe     ← GUI 版（Qt，WITH_QT=ON 才有）
 
-06-standard-library\01-c-stdlib-toolbox\build\mingw\bin\app_cli.exe        ← 命令行版
-06-standard-library\01-c-stdlib-toolbox\build\mingw\bin\app_gui_win32.exe  ← GUI 版（Win32）
-06-standard-library\02-cpp-io-report\build\mingw\bin\app_gui_qt.exe        ← GUI 版（Qt，WITH_QT=ON 才有）
+07-standard-library\01-c-stdlib-toolbox\build\mingw\bin\app_cli.exe        ← 命令行版
+07-standard-library\01-c-stdlib-toolbox\build\mingw\bin\app_gui_win32.exe  ← GUI 版（Win32）
+07-standard-library\02-cpp-io-report\build\mingw\bin\app_gui_qt.exe        ← GUI 版（Qt，WITH_QT=ON 才有）
 ```
 
 `build/` 目录可以随时删除，重新按 F5 时会自动重建；
@@ -223,10 +223,10 @@ cmake --build --preset msvc-debug
 |---|---|---|
 | `05-oop/01-cpp-class-basics` | 有 | 有 |
 | `05-oop/02-cpp-inheritance-polymorphism` | 有 | 有 |
-| `06-standard-library/02-cpp-io-report` | 有 | 有 |
-| `06-standard-library/07-cpp-filesystem-scan` | 有 | 有 |
-| `06-standard-library/01-c-stdlib-toolbox` | 有（用 C 写） | 无 |
-| `06-standard-library/05-cpp-numeric-random` | 有 | 无 |
+| `07-standard-library/02-cpp-io-report` | 有 | 有 |
+| `07-standard-library/07-cpp-filesystem-scan` | 有 | 有 |
+| `07-standard-library/01-c-stdlib-toolbox` | 有（用 C 写） | 无 |
+| `07-standard-library/05-cpp-numeric-random` | 有 | 无 |
 
 **带 Qt 版的那几份各带两份功能相同的界面**，读者按需要挑一份：
 
