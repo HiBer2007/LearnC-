@@ -39,7 +39,7 @@
 | 《07-标准库/B-01-输入输出：iostream.md》第 7 节 | `<fstream>` 文件 | `load_file()` 一次读完整份配置再解析 |
 | 《07-标准库/B-02-std-string 与 string_view.md》第 3 节 | `std::string` 的查找与截取 | `find('=')`、`substr` 切出键与值 |
 | 《07-标准库/B-02-std-string 与 string_view.md》第 6 节 | `std::string_view` | `trim` 与 `strip_comment` 收 `string_view`，切分过程不复制 |
-| 《07-标准库/AB-把标准库用对.md》第 1 节 | 头文件命名规则 | 用 `<cstdlib>` 与 `std::strtoll`，不混用 C 头文件里的全局名字 |
+| 《07-标准库/Z-把标准库用对.md》第 1 节 | 头文件命名规则 | 用 `<cstdlib>` 与 `std::strtoll`，不混用 C 头文件里的全局名字 |
 
 ## 这个项目要解决什么问题
 
