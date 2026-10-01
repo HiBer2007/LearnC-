@@ -43,7 +43,7 @@
 | [`06-lower-level/03-bare-metal-boot`](06-lower-level/03-bare-metal-boot/) | 交叉编译（C + 汇编 + 链接脚本） | 命令行（含 semihosting） | `06-更底层`：《06-更底层/07-链接脚本与启动代码.md》第 1.2、2.4、2.6、3.3 小节 | 自己的链接脚本与向量表：段表、`Reset_Handler`、`.data` / `.bss`，QEMU 与真板两种跑法 |
 | [`06-lower-level/04-symbols-and-linking`](06-lower-level/04-symbols-and-linking/) | CMake 多文件（C + C++） | 命令行 | `06-更底层`：《06-更底层/06-符号与链接属性.md》第 1.2、4.2、6.1 小节 | 弱符号覆盖、静态库成员粒度与产物大小、`extern "C"` 与修饰名 |
 | [`06-lower-level/05-interrupt-and-atomic`](06-lower-level/05-interrupt-and-atomic/) | CMake 多文件（C++）+ 交叉编译 | 命令行（含 semihosting） | `06-更底层`：《06-更底层/10-中断、并发与内存序.md》第 2.1、2.2、3.4 小节 | 丢更新复现与三种修法（关中断 / 临界区 / 原子量）、真板上的中断延迟测量 |
-| [`06-lower-level/06-binary-tools`](06-lower-level/06-binary-tools/) | CMake 多文件（C） | 命令行 | `06-更底层`：《06-更底层/13-收尾：什么时候需要下到这一层.md》第 1.1、1.4 小节、《06-更底层/09-C++ 对象布局与它的硬件代价.md》第 2.1、2.4 小节 | 把 `nm` / `objdump` / `size` / `readelf` 的输出解析成结论，PE 与 ELF 两种产物都能看 |
+| [`06-lower-level/06-binary-tools`](06-lower-level/06-binary-tools/) | CMake 多文件（C） | 命令行 | `06-更底层`：《06-更底层/13-什么时候需要下到这一层.md》第 1.1、1.4 小节、《06-更底层/09-C++ 对象布局与它的硬件代价.md》第 2.1、2.4 小节 | 把 `nm` / `objdump` / `size` / `readelf` 的输出解析成结论，PE 与 ELF 两种产物都能看 |
 
 示例路径分两级：**第一级是板块目录**（`01-compiler`、`02-debugger`、
 `03-build-toolchain`、`04-syntax`、`05-oop`、`07-standard-library`），第二级是示例目录。
