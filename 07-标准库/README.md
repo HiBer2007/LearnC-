@@ -68,27 +68,27 @@
 
 | 文档 | 内容 | 适合什么时候读 |
 |---|---|---|
-| [A-00-导读：C 标准库](A-00-导读：C 标准库.md) | **C 标准库是怎么组织的**（标准的一部分、`<xxx.h>` 的划分）、**怎么查**、实现定义与未定义在库里的表现、哪些坑是设计遗留 | **读 A 段任何一章之前** |
+| [A-00-导读：C 标准库](<A-00-导读：C 标准库.md>) | **C 标准库是怎么组织的**（标准的一部分、`<xxx.h>` 的划分）、**怎么查**、实现定义与未定义在库里的表现、哪些坑是设计遗留 | **读 A 段任何一章之前** |
 | [A-01-输入输出：stdio](A-01-输入输出：stdio.md) | 流与缓冲、`printf` 家族的格式化细节、`scanf` 的坑、`fopen` 与文件读写定位、文本与二进制模式、`errno` 与 `perror` | 要读写文件或打印时 |
 | [A-02-字符串与内存：string.h](A-02-字符串与内存：string.h.md) | `strlen`/`strcpy`/`strcmp`/`strstr` 一族、`mem*` 系列（**重叠区域为什么必须 `memmove`**）、溢出的真实后果、`strncpy` 的坑与 `snprintf` 的正确用法、数字转换 | 处理 `char[]` 时 |
 | [A-03-数值、数学与随机](A-03-数值、数学与随机.md) | `<math.h>` 常用函数、`<float.h>` 与 `<limits.h>` 的极值、`<stdint.h>` 定宽整数与格式宏、`rand` 为什么弱 | 要算数、要随机数时 |
 | [A-04-时间与日期：time.h](A-04-时间与日期：time.h.md) | `time`/`clock`/`difftime`、`localtime` 与 `gmtime`、`strftime`、`timespec_get`、**为什么测耗时不该用 `clock()`** | 要记时间或格式化日期时 |
-| [A-05-工具与其它：stdlib 与杂项](A-05-工具与其它：stdlib 与杂项.md) | `malloc` 一族、`qsort`/`bsearch`、`exit`/`atexit`、`getenv`/`system`、`<assert.h>`、`<ctype.h>`、`<errno.h>`、`<setjmp.h>`、`<signal.h>` | 要用到那些「零散但常用」的头文件时 |
+| [A-05-工具与其它：stdlib 与杂项](<A-05-工具与其它：stdlib 与杂项.md>) | `malloc` 一族、`qsort`/`bsearch`、`exit`/`atexit`、`getenv`/`system`、`<assert.h>`、`<ctype.h>`、`<errno.h>`、`<setjmp.h>`、`<signal.h>` | 要用到那些「零散但常用」的头文件时 |
 
 ### B 段：C++ 标准库
 
 | 文档 | 内容 | 适合什么时候读 |
 |---|---|---|
-| [B-00-导读：C++ 标准库与 C 的关系](B-00-导读：C++ 标准库与 C 的关系.md) | `<cstdio>` 与 `<stdio.h>` 的区别、`std::` 里的那些 C 名字、**与 STL 的边界**、版本标注习惯 | **读 B 段任何一章之前** |
+| [B-00-导读：C++ 标准库与 C 的关系](<B-00-导读：C++ 标准库与 C 的关系.md>) | `<cstdio>` 与 `<stdio.h>` 的区别、`std::` 里的那些 C 名字、**与 STL 的边界**、版本标注习惯 | **读 B 段任何一章之前** |
 | [B-01-输入输出：iostream](B-01-输入输出：iostream.md) | 四个标准流、`<<` 与 `>>`、`<iomanip>` 格式化、**流的状态**、`getline`、`<sstream>`、`<fstream>`、**与 `printf` 的取舍与实测** | 要用 C++ 方式读写时 |
-| [B-02-std-string 与 string_view](B-02-std-string 与 string_view.md) | 构造与容量（**SSO 实测**）、修改与查找、**失效规则**、与 C 字符串互操作、`string_view` 的用途与悬垂风险、数字互转、**编码现实** | 处理文本时 |
+| [B-02-std-string 与 string_view](<B-02-std-string 与 string_view.md>) | 构造与容量（**SSO 实测**）、修改与查找、**失效规则**、与 C 字符串互操作、`string_view` 的用途与悬垂风险、数字互转、**编码现实** | 处理文本时 |
 | [B-03-智能指针的用法](B-03-智能指针的用法.md) | `unique_ptr` 的删除器与工厂、`shared_ptr` 的控制块与引用计数、**循环引用与 `weak_ptr`**、`make_*` 的取舍、怎么选 | 要管对象生存期时 |
 | [B-04-可调用物的包装](B-04-可调用物的包装.md) | `std::function` 的用法与代价、`bind` 与 lambda 的取舍、成员函数绑定、`reference_wrapper`、`invoke` | 要存一个「待会儿再调」的东西时 |
 | [B-05-数值](B-05-数值.md) | `<limits>`、`<cmath>`、**`<random>` 的引擎与分布**、`<numeric>`、浮点比较与容差 | 要算数、要随机数时 |
 | [B-06-时间：chrono](B-06-时间：chrono.md) | `duration`/`time_point`/`clock`、**`steady_clock` 与 `system_clock` 的区别**、测耗时、`sleep_for` | 要测耗时或做定时时 |
 | [B-07-文件系统：filesystem](B-07-文件系统：filesystem.md) | `path` 与编码现实、遍历目录、属性与时间戳、增删改复制、**`error_code` 与异常两条路径** | 要操作文件与目录时 |
 | [B-08-工具类（上）：pair、tuple、optional、variant、any](B-08-工具类（上）：pair、tuple、optional、variant、any.md) | 结构化绑定、`tuple` 的取用、**`optional` 表达「可能没有」**、`variant` 与 `visit`、`any` 的边界 | 要返回多个值或表示「多选一」时 |
-| [B-09-工具类（下）：type_traits 与 concepts](B-09-工具类（下）：type_traits 与 concepts.md) | `<type_traits>` 的分类与常用件、`typeid` 与 `type_info` 的边界、**C++20 标准概念库** | 写模板要做约束时 |
+| [B-09-工具类（下）：type_traits 与 concepts](<B-09-工具类（下）：type_traits 与 concepts.md>) | `<type_traits>` 的分类与常用件、`typeid` 与 `type_info` 的边界、**C++20 标准概念库** | 写模板要做约束时 |
 | [B-10-内存与并发的基础设施](B-10-内存与并发的基础设施.md) | 分配器与对齐、`<mutex>`/`<atomic>`/`<condition_variable>` 的**接口用法** | 要加锁或用原子量时 |
 | [END-把标准库用对](END-把标准库用对.md) | 头文件命名规则、实现差异、**什么时候不该用标准库**、一页速查 | **最后读** |
 
