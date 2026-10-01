@@ -85,7 +85,7 @@
 | 条件 | 说明 |
 |---|---|
 | **文件自带说明性的文件头注释块** | Doxygen `@file` / `@brief` / `@author`，或位于文件最前面的用途说明 |
-| **所在仓库或模块有许可证依据** | 主仓库 `LICENSE`（GPL-3.0）；链接仓库各自 `LICENSE`（LGPL-2.1）；`nbtcpp` 为 README 声明（LGPLv3，**目录内无 LICENSE 文件**） |
+| **所在仓库或模块有许可证依据** | 主仓库 `LICENSE`（GPL-3.0）；链接仓库各自 `LICENSE`（LGPL-2.1）；`nbtcpp` 根目录 `LICENSE`（LGPL-3.0，7,652 字节，2026-10-01 补入） |
 
 **不满足第一条的候选文件一律没有复制**，清单见文末「未收录的候选文件」。
 
@@ -302,35 +302,65 @@
 
 - **内部模块**（`NeoCore`、`NeoBuild`、`NeoWorkspace` 等 27 个）→ **GPL-3.0**
 - **链接仓库**（`CommonLoggerCPP`、`CrashTracker` 等 7 个）→ **LGPL-2.1**
-- **nbtcpp** → 声明 LGPL-3.0
+- **nbtcpp** → **LGPL-3.0**（依据根目录 `LICENSE`）
 
 判断方法：看目录里的 `.git` 是**文件**还是**目录**，
 或查 `git submodule status`。详见《版权与许可说明.md》第 2.2 节。
 
-### 4. nbtcpp 没有 LICENSE 文件
+### 4. nbtcpp 的 LICENSE 是 2026-10-01 补入的
 
-`nbtcpp` 是**链接仓库**，README 里写着 LGPLv3 并指向 `LICENSE`，
-**但目录中并没有这个文件**。本目录按 README 的声明登记为 LGPL-3.0。
+`nbtcpp` 是**链接仓库**（<https://github.com/HiBer2007/nbtcpp>）。
 
-> **声明许可不等于提供许可文本。** 正式对外分发前，建议要求上游补上 `LICENSE`，
-> 这一点在《版权与许可说明.md》第 2.2 节与《AGENTS.local.md》的待办里都已记录。
+| 时间 | 状态 |
+|---|---|
+| 2026-10-01 之前 | README 里写着 LGPLv3 并指向 `LICENSE`，**但目录中并没有这个文件** |
+| 2026-10-01 起 | 上游补上了 `LICENSE`（7,652 字节，LGPL-3.0 全文）与 `COPYING`（35,149 字节，GPL-3.0 全文） |
 
-### 5. nbtcpp 与 fNbt 的关系要一并致谢
+**本目录现按根目录的 `LICENSE` 登记为 LGPL-3.0。**
+此前写「仅依据 README 声明」的地方均已更新。
 
-本目录来自 `nbtcpp` 的多个文件写着「对应 C# fNbt 库中的某某」，
+> **声明许可不等于提供许可文本。** `nbtcpp` 此前正是这一点的实例。
+> **本目录不替第三方补 `LICENSE`**——许可文本只能由著作权人自己给出，
+> 教材代拟一份既无授权效力，也会把「谁声明了什么」这一事实搅乱。
+> **引用 `nbtcpp` 的代码时，以该仓库自己的许可文件与声明为准**，
+> 并保留本目录的来源标注。
+>
+> **注意**：本机 `K:\NeoServerUpdateModpack` 下的 `nbtcpp` 检出仍是补文件之前的状态，
+> 核对时以远端仓库为准。
+
+### 5. nbtcpp 的两个上游要一并致谢
+
+`nbtcpp` 的 README 首段自述为移植项目：
+
+`文档`
+
+> "**nbtcpp** 是一个从 C# fNbt + NbtStudio 移植到 C++17 的完整 NBT 库。"
+>
+> —— `nbtcpp/README.md`
+
+本目录来自 `nbtcpp` 的多个文件也写着「对应 C# fNbt 库中的某某」，
 例如 `nbt_exception.h` 里的 `NbtFormatException`。
+
+**fNbt**（`mstefarov/fNbt`）采用 **BSD-3-Clause**：
 
 `文档`
 
 > "fNbt v0.5.0+ is licensed under 3-Clause BSD license; see docs/LICENSE.txt.
 > LibNbt2012 up to and including v0.4.1 kept LibNbt's original license (LGPLv3)."
 >
-> —— fNbt 项目说明，NuGet 包页面 <https://www.nuget.org/packages/fNbt>
+> —— `fNbt/README.md` 的 `## LICENSING` 一节；
+> 许可全文在 `docs/LICENSE.txt`（1,520 字节）。
+> **该文件不在仓库根目录**，因此 GitHub 的 `/license` 接口对它返回 404。
 
-**若 `nbtcpp` 确为 fNbt 的移植，分发时应一并致谢 fNbt 并注明 BSD-3-Clause。**
+**NbtStudio**（`tryashtar/nbt-studio`）**没有许可依据**：
+根目录无 `LICENSE`，全仓库 214 个条目里没有任何 `LICENSE`、`COPYING` 或 `NOTICE`，
+README 也没有许可声明。
 
-> **是否构成移植属** `待确认`：从仓库本身无法判定 `nbtcpp` 是只参考了 fNbt 的 API，
-> 还是移植了它的实现。**在核实之前，本目录仍按 `nbtcpp` README 的声明记为 LGPL-3.0。**
+**分发时应一并致谢 fNbt（BSD-3-Clause）与 NbtStudio，并注明各自的上游地址。**
+
+> **移植程度属** `待确认`：README 已自述为移植，但只参考了两个上游的 API 设计、
+> 还是逐段移植了它们的实现，从仓库无法判定。
+> **本目录按 `nbtcpp` 根目录的 `LICENSE` 记为 LGPL-3.0。**
 
 ---
 
