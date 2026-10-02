@@ -44,7 +44,7 @@
 | 形态 | 模板 | 怎么构建 |
 |---|---|---|
 | 单文件 | `01-compiler/01-c-single-file`、`01-compiler/02-cpp-single-file`、`04-syntax/01-cpp-const-init` | 直接调用编译器，例如 `g++ -std=c++17 -g -O0 -Wall -Wextra main.cpp -o app.exe` |
-| CMake 工程 | `03-build-toolchain/` 下的两个、`05-oop/` 下的四个、`07-standard-library/` 下的九个、`06-lower-level/` 下的四个，共十九个模板 | `cmake --preset mingw-gdb` 然后 `cmake --build --preset mingw-gdb`；`05-oop/01-cpp-class`、`05-oop/02-cpp-inheritance`、`05-oop/04-cpp-raii-exceptions`、`07-standard-library/07-cpp-filesystem` 的 Qt 界面版另加 `-DWITH_QT=ON` |
+| CMake 工程 | `03-build-toolchain/` 下的两个、`05-oop/` 下的四个、`07-standard-library/` 下的九个、`09-data-structures/` 下的六个、`06-lower-level/` 下的四个，共十九个模板 | `cmake --preset mingw-gdb` 然后 `cmake --build --preset mingw-gdb`；`05-oop/01-cpp-class`、`05-oop/02-cpp-inheritance`、`05-oop/04-cpp-raii-exceptions`、`07-standard-library/07-cpp-filesystem` 的 Qt 界面版另加 `-DWITH_QT=ON` |
 
 `03-build-toolchain/` 下两个模板的预设文件**需要自己编写**（这是那两道练习的一部分）；
 `05-oop/`、`07-standard-library/` 与 `06-lower-level/` 下十七个模板的 `CMakePresets.json` 已经给出，可以直接用。
@@ -116,6 +116,12 @@
 | [`06-lower-level/03-linker-script-lab`](06-lower-level/03-linker-script-lab/) | 交叉编译（arm-none-eabi-gcc + QEMU，无 CMake） | `06-更底层` · 《06-更底层/07-链接脚本与启动代码.md》第 2、3、5 节 · 综合 | 从一个「能链接但跑不起来」的链接脚本里找出并修好两处缺陷：向量表被 `--gc-sections` 回收、`.data` 少了 `AT> FLASH` | `STM32F103C8_FLASH.ld`（有缺陷）+ `startup_stm32f103xe.s` + `app/main.c` + `build.sh`；自行定位缺陷并改脚本 |
 | [`06-lower-level/04-static-lib`](06-lower-level/04-static-lib/) | CMake 多文件（C，静态库 + 两个驱动） | `06-更底层` · 《06-更底层/06-符号与链接属性.md》第 2、3、4、6 节 · 进阶 | 内部链接与重复定义、静态库的成员粒度与链接顺序、弱的默认实现与强定义覆盖（含覆盖失败的静默后果） | `include/sensor.h` + `core/sensor.c`、`core/sensor_extra.c`、`core/sensor_default.c`、`drivers/driver_fast.c` 骨架（4 个阶段）、`src/main_cli.c`；按 TODO 实现 |
 | [`06-lower-level/05-critical-section`](06-lower-level/05-critical-section/) | CMake 多文件（C++，命令行） | `06-更底层` · 《06-更底层/10-中断、并发与内存序.md》第 2、3、4 节 · 综合 | 丢更新复现、三种修法（关中断 / 可嵌套临界区 / 原子读-改-写）与四种写法的代价对照 | `include/sim_irq.hpp` + `include/counter.hpp` + `src/counter.cpp` 骨架（4 个阶段）、`src/sim_irq.cpp`、`src/main_cli.cpp`；按 TODO 实现 |
+| [`09-data-structures/01-dynamic-array`](09-data-structures/01-dynamic-array/) | CMake 多文件（核心 + 命令行） | `09-高阶数据结构` · 《09-高阶数据结构/B-01-手写：动态数组.md》 · 进阶 | 动态数组的扩容、搬迁与异常安全 | 骨架给到「要内存、搬、放新元素」；**换指针、清理旧缓冲、异常回滚三处留空**（5 阶段） |
+| [`09-data-structures/02-list`](09-data-structures/02-list/) | CMake 多文件（核心 + 命令行） | `09-高阶数据结构` · 《09-高阶数据结构/B-02-手写：链表.md》 · 进阶 | 带哨兵的双向链表与 splice | 骨架给到节点与哨兵；**insert 的指针改动、erase 的摘链与析构顺序、clear 与析构、splice 四处留空**（4 阶段） |
+| [`09-data-structures/03-hash-table`](09-data-structures/03-hash-table/) | CMake 多文件（核心 + 命令行） | `09-高阶数据结构` · 《09-高阶数据结构/B-03-手写：哈希表.md》 · 进阶 | 开放寻址、墓碑与再哈希 | 骨架给到桶与查找三步；**探测（含墓碑分支）、rehash、erase 置墓碑、加桶时机四处留空**（4 阶段） |
+| [`09-data-structures/04-rb-tree`](09-data-structures/04-rb-tree/) | CMake 多文件（核心 + 命令行） | `09-高阶数据结构` · 《09-高阶数据结构/B-04-手写：平衡树.md》 · 挑战 | 红黑树的插入修复与不变式 | 骨架给到旋转与打印；**不变式校验器、插入修复三种情形与根染黑四处留空**（4 阶段） |
+| [`09-data-structures/05-graph-dsu`](09-data-structures/05-graph-dsu/) | CMake 多文件（核心 + 命令行） | `09-高阶数据结构` · 《09-高阶数据结构/B-05-手写：图与并查集.md》 · 进阶 | 三种存法共用一套遍历接口、并查集两处优化 | 骨架给到结构定义；**三个 for_each_neighbor、路径压缩、按大小合并五处留空**（4 阶段） |
+| [`09-data-structures/06-choose`](09-data-structures/06-choose/) | CMake 多文件（纯命令行，输出含中文，先 chcp 65001） | `09-高阶数据结构` · 《09-高阶数据结构/END-怎么选容器与结构.md》 · 入门 | 按需求反查结构、说清代价与依据 | 题面六段需求已给出；**每行的「结构」「代价」「判据」「出处」四栏留空**（4 阶段） |
 
 模板路径分两级：**第一级是板块目录**（`01-compiler`、`03-build-toolchain`、
 `04-syntax`、`05-oop`、`07-standard-library`），第二级是模板目录。
