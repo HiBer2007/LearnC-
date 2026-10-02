@@ -34,6 +34,7 @@
 | 插值查找与它什么时候退化 | 报告第四段与 `interpolation_search` |
 | 同一批键上哈希索引与二分的分工 | 报告第五段；`HashIndex` 与坏散列的对照 |
 | 结构量：比较次数、探查次数、装载因子、步数直方图 | 报告第六段与 `histogram_block` |
+| 三种摆法在十种规模上的代价 | 正文第 4.1.2 小节的表；`src/find_threshold.cpp` |
 
 ## 这个项目要解决什么问题
 
@@ -88,7 +89,9 @@
 include/search_lab.hpp   176 行：结构量、数据构造、五种查找写法与哈希索引的接口
 src/search_lab.cpp      1484 行：实现、报告的六段输出、计时实验与 29 项自测
 src/main_cli.cpp         134 行：解析参数、打印、UTF-8 到控制台代码页的转换
-CMakeLists.txt            61 行：目标 core（静态库）与 app_cli；字符集选项全板块统一
+src/find_threshold.cpp   136 行：正文第 4.1.2 小节的对照程序，固定 -O2；
+                               正文的代码块与它逐字相同，版权头除外
+CMakeLists.txt            74 行：目标 core（静态库）、app_cli 与 find_threshold；字符集选项全板块统一
 CMakePresets.json         46 行：mingw-gdb（Ninja + g++）与 msvc 两套预设
 ```
 
@@ -123,6 +126,9 @@ build\mingw\bin\app_cli.exe --selftest
 
 # 只跑计时实验与自测
 build\mingw\bin\app_cli.exe --timing
+
+# 正文第 4.1.2 小节的对照程序（固定 -O2，出那张表）
+build\mingw\bin\find_threshold.exe
 ```
 
 用预设也可以，两条命令等价：
@@ -443,3 +449,5 @@ Debug 版产出，`2026-10-02` 实测。报告里全是结构量，重复运行�
 - 二分与插值都假定表已经升序：表没排好序时两者不会报错，只会给出没有意义的结果
 - 计时数字随机器、编译器与优化等级变化，程序只打印不断言；正文给的是区间，
   两次运行都打印校验和，避免整段循环在 `-O2` 下被优化掉却不自知
+- `find_threshold` 那张表里「每查询比较」两栏与「命中计数」一栏重跑逐位相同，
+  「ns/查询」三栏每次重跑都不同，正文引用的是其中一次

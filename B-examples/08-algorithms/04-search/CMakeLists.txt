@@ -1,8 +1,9 @@
 # ===================================================================
 #  示例 08-algorithms/04-search · 查找：从线性到索引
 #
-#    core      纯逻辑，不含任何界面代码
-#    app_cli   命令行版，链接 core
+#    core            纯逻辑，不含任何界面代码
+#    app_cli         命令行版，链接 core
+#    find_threshold  正文第 4.1.2 小节的对照程序，单文件、不链接 core
 #
 #  核心模块单独成静态库：命令行版与将来可能加的界面版共用同一份实现，
 #  把界面文件删掉，核心库照样能编译、能自测通过。
@@ -58,4 +59,16 @@ if(MSVC)
     target_compile_options(app_cli PRIVATE /source-charset:utf-8 /execution-charset:gbk /W4)
 else()
     target_compile_options(app_cli PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
+endif()
+
+# ---------------------------------------------------------------
+#  正文第 4.1.2 小节的对照程序：三种摆法在十种规模上的代价
+#  正文里的代码块与本文件逐字相同（版权头除外），正文那张表由它跑出。
+#  优化等级固定 -O2：正文的数全部出自 -O2 构建，与文件首行注释里的命令一致。
+# ---------------------------------------------------------------
+add_executable(find_threshold src/find_threshold.cpp)
+if(MSVC)
+    target_compile_options(find_threshold PRIVATE /O2 /source-charset:utf-8 /execution-charset:gbk /W4)
+else()
+    target_compile_options(find_threshold PRIVATE -O2 -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
 endif()
