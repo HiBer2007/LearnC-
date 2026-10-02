@@ -26,6 +26,8 @@ endif()
 # MSVC  → build/msvc/bin/Debug/*.exe（多配置生成器自动加一层）
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  核心模块：不依赖界面，可单独编译
 # ---------------------------------------------------------------
@@ -61,5 +63,3 @@ if(MSVC)
 else()
     target_compile_options(app_cli PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

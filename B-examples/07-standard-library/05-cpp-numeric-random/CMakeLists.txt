@@ -26,6 +26,8 @@ endif()
 # MinGW → build/mingw/bin/*.exe；MSVC → build/msvc/bin/Debug/*.exe
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  核心模块：不依赖界面，可单独编译
 # ---------------------------------------------------------------
@@ -69,5 +71,3 @@ if(WIN32)
         target_compile_options(app_gui_win32 PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
     endif()
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

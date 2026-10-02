@@ -40,6 +40,8 @@ endif()
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------- 静态库
 add_library(sensor_core STATIC
     core/sensor.c
@@ -86,5 +88,3 @@ foreach(target sensor_core sensor_driver app_default app_override)
         target_compile_options(${target} PRIVATE -g -Wall -Wextra)
     endif()
 endforeach()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

@@ -1,0 +1,5 @@
+{
+    "cmake.sourceDirectory": "K:/C相关课程/C-templates/03-build-toolchain/02-cmake-cpp",
+    "cmake.buildDirectory": "${sourceDirectory}/build",
+    "cmake.generator": "Ninja"
+}

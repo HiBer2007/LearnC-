@@ -28,6 +28,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 find_package(Threads REQUIRED)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  核心模块：只依赖 C++ 标准库
 # ---------------------------------------------------------------
@@ -56,5 +58,3 @@ if(MSVC)
 else()
     target_compile_options(app_cli PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

@@ -32,6 +32,8 @@ endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  小库：RAII 包装 + 模板。模板在头文件里，全特化在 .cpp 里
 # ---------------------------------------------------------------
@@ -58,5 +60,3 @@ if(MSVC)
 else()
     target_compile_options(app PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

@@ -29,6 +29,8 @@ endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_executable(app
     src/main.cpp
     src/util.cpp
@@ -43,5 +45,3 @@ if(MSVC)
 else()
     target_compile_options(app PRIVATE -g -Wall -Wextra)
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

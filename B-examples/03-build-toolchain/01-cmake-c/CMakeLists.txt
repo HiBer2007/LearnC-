@@ -33,6 +33,10 @@ endif()
 #     MSVC  → build/msvc/bin/Debug/app.exe
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+# 生成 compile_commands.json 给智能感知用精确编译参数
+# 注意：只有 Ninja / Makefile 生成器会产出，Visual Studio 生成器不会
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  多文件：源文件必须显式列出
 #  （MSYS2 从 2024-11 起禁用了通配符展开，别用 file(GLOB *.c)）
@@ -68,7 +72,3 @@ else()
     # -fexec-charset=GBK     字符串常量按 GBK 写入 exe
     target_compile_options(app PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
 endif()
-
-# 生成 compile_commands.json 给智能感知用精确编译参数
-# 注意：只有 Ninja / Makefile 生成器会产出，Visual Studio 生成器不会
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

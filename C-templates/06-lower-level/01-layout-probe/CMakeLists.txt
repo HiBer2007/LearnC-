@@ -33,6 +33,9 @@ endif()
 # 产物统一放到 <build>/bin 下
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+# 给智能感知生成精确编译参数（只有 Ninja / Makefile 生成器会产出）
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_executable(app_cli
     src/main_cli.c
     src/layout_probe.c
@@ -51,6 +54,3 @@ if(MSVC)
 else()
     target_compile_options(app_cli PRIVATE -g -Wall -Wextra)
 endif()
-
-# 给智能感知生成精确编译参数（只有 Ninja / Makefile 生成器会产出）
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

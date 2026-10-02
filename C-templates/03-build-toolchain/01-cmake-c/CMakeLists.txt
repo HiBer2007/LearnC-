@@ -26,6 +26,10 @@ endif()
 # 产物统一放到 <build>/bin 下
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+# 给智能感知生成精确编译参数
+# 注意：只有 Ninja / Makefile 生成器会产出，Visual Studio 生成器不会
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_executable(app
     src/main.c
     src/util.c
@@ -40,7 +44,3 @@ if(MSVC)
 else()
     target_compile_options(app PRIVATE -g -Wall -Wextra)
 endif()
-
-# 给智能感知生成精确编译参数
-# 注意：只有 Ninja / Makefile 生成器会产出，Visual Studio 生成器不会
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

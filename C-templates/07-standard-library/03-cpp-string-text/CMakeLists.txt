@@ -29,6 +29,9 @@ endif()
 # 产物统一放到 <build>/bin 下
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+# 给智能感知生成精确编译参数（只有 Ninja / Makefile 生成器会产出）
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------- 核心逻辑
 # 这一层是练习的主体，界面与命令行都调用它，因此它不能包含任何界面代码。
 add_library(core STATIC
@@ -53,5 +56,3 @@ foreach(target core app_cli)
         target_compile_options(${target} PRIVATE -g -Wall -Wextra)
     endif()
 endforeach()
-# 给智能感知生成精确编译参数（只有 Ninja / Makefile 生成器会产出）
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

@@ -34,6 +34,8 @@ endif()
 # MSVC  → build/msvc/bin/Debug/*.exe（多配置生成器自动加一层）
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  静态库：三个成员，每个成员一个目标文件
 # ---------------------------------------------------------------
@@ -80,5 +82,3 @@ foreach(tgt app_cli app_cli_slim)
         target_compile_options(${tgt} PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
     endif()
 endforeach()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

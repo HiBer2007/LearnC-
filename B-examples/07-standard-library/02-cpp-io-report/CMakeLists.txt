@@ -29,6 +29,8 @@ endif()
 # MSVC  → build/msvc/bin/Debug/*.exe（多配置生成器自动加一层）
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  核心模块：不依赖界面，可单独编译
 # ---------------------------------------------------------------
@@ -113,5 +115,3 @@ if(WITH_QT)
     # 构建完自动把 Qt 运行时与 MinGW 运行时拷到 exe 旁边
     qt_enable_deploy(app_gui_qt)
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

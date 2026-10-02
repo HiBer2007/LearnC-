@@ -47,6 +47,8 @@ foreach(_v BT_OBJDUMP_EXE BT_NM_EXE BT_SIZE_EXE BT_READELF_EXE)
     endif()
 endforeach()
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  核心模块
 # ---------------------------------------------------------------
@@ -91,5 +93,3 @@ if(MSVC)
 else()
     target_compile_options(app_cli PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

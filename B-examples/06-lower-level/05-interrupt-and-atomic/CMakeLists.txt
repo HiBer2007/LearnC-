@@ -31,6 +31,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 find_package(Threads REQUIRED)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 add_library(core STATIC src/race_lab.cpp)
 target_include_directories(core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 target_link_libraries(core PUBLIC Threads::Threads)
@@ -48,5 +50,3 @@ if(MSVC)
 else()
     target_compile_options(app_cli PRIVATE -g -Wall -Wextra -finput-charset=UTF-8 -fexec-charset=GBK)
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

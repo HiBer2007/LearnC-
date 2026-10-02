@@ -26,6 +26,8 @@ endif()
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # ---------------------------------------------------------------
 #  核心模块：表格 + 导出器，不依赖 GUI
 # ---------------------------------------------------------------
@@ -176,5 +178,3 @@ if(WITH_QT)
         endif()
     endif()
 endif()
-
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
