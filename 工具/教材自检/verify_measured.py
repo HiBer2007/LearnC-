@@ -11,7 +11,8 @@
      计时量按数量级判，比值超过 5 倍才报 MISMATCH；
      正文块是节选时，只要每一行都能在某个程序的输出里找到就算过。
 
-三条新规矩（2026-10-02 加，原因见 README 的「已标节选的块不再报 PROBLEM」与「它查不出什么」）：
+四条新规矩（2026-10-02 加，原因见 README 的「已标节选的块不再报 PROBLEM」与
+「它查不出什么」）：
 
   - `AGENTS.local.md` 3.5 允许片段，前提是**明确标了节选**。标了的块跳过编译，
     在报告里单列 `[SKIP] 已标节选`，不再混进 `[PROBLEM]`；没标的照旧报 `[PROBLEM]`；
@@ -22,7 +23,14 @@
     本机没有 WSL 才跳过并说明原因；
   - 地址掩码不再吃 8 位以上的十进制数（`268435448`、`11649000.0`）。
     原先 `\b(?:0x)?[0-9a-fA-F]{8,16}\b` 会把它当地址，而吃不吃取决于
-    计时值过没过 10^7，于是同一个块重跑一次就可能从「容差内漂移」翻成「MISMATCH」。
+    计时值过没过 10^7，于是同一个块重跑一次就可能从「容差内漂移」翻成「MISMATCH」；
+  - 正文按 `AGENTS.local.md` 3.12 第三节第 2 步把计时行改成**区间写法**
+    （「约 2–12」）时，那一行**与紧跟在它下面的说明句**一起跳过逐行比对，
+    报告里单列 `[SKIP] 区间写法`。区间本来就不会出现在程序输出里，
+    逐行比对只会把它报成 `NOT-FOUND`——那既不是正文错，也不是程序错。
+    护栏写在 `interval_line()` 里：判据是「**带「约」且形如区间的数值单元格**」，
+    **不是**「这行有中文」「这行比较长」；把区间单元格挖掉之后行里还有别的数字的，
+    照旧逐行比对（**写错的具体值仍然报 `MISMATCH`**），没有「约」前缀的单次值也照旧。
 
 用法（在仓库根目录下跑）：
     python 工具/教材自检/verify_measured.py            # 默认查 README 与 A-00..A-03
@@ -31,9 +39,10 @@
 报告写到 临时/ops_lab/verify_measured_report.txt（控制台只打印末尾摘要）。
 
 脚本查不出的（不是它没跑，是它看不见）：
-  - 程序里硬编码的 printf：程序会照打，脚本无法判断它其实没测过；
+  - 程序里硬编码的 printf：程序会照打，脚本无法判断那些数到底测没测过；
   - 正文散文里的数字：脚本只比对输出块，不比对句子；
-  - 计时数字的跨机器可比性：只报比值，不断言对错。
+  - 计时数字的跨机器可比性：只报比值，不断言对错；
+  - 区间的宽窄是否如实：脚本只确认那行不是程序输出里的东西，判不了区间对不对。
 """
 
 import argparse
@@ -72,6 +81,15 @@ TOLERANCE = 5.0
 LABEL_LINE = re.compile(r"^`[^`]+`$")                    # `C++`、`实测数据` 这类标签行
 EXCERPT_LINE = re.compile(r"^[（(].*节选.*[)）]$")         # 整行是一个带「节选」的括号注
 LINUX_HINT = re.compile(r"-fsanitize=|（Linux|\(Linux|Linux 侧|linux 侧")
+
+# 区间写法（`AGENTS.local.md` 3.12 第三节第 2 步）：计时量漂到 5 倍容差以外时，
+# 正文把它改成**区间**，并写明这一行会随机器负载浮动。区间本来就不该出现在
+# 程序输出里，逐行比对对它只会报 NOT-FOUND——那是约定与工具打架，不是正文错。
+# 连接号认半角 `-` 与 `–`／`—`（正文用的是 `–`）。
+INTERVAL = re.compile(r"约\s*[-+]?\d+(?:\.\d+)?\s*[–—-]\s*[-+]?\d+(?:\.\d+)?\s*"
+                      r"(?:ms|ns|us|μs|倍)?")
+# 区间行下面那句说明句的写法（只在紧跟着区间行时才认，见 interval_note()）
+INTERVAL_NOTE = re.compile(r"随机器负载浮动|按区间给|不写单次值")
 WSL_DISTRO = os.environ.get("VERIFY_MEASURED_WSL", "Ubuntu")
 
 
@@ -123,6 +141,40 @@ def excerpt_mark(lines, fence, close, body):
         if s.startswith(("//", "/*", "*", "#", ";", "<!--")):
             return "块内首行"
     return ""
+
+
+def interval_line(line):
+    """整行是不是「区间写法」的计时行（`AGENTS.local.md` 3.12 第三节第 2 步）。
+
+    判据两半，缺一不可：
+
+      1. 行里**至少有一个**「约 A–B」形式的数值单元格（带「约」前缀，
+         连接号是 `–`／`—`／`-`）；
+      2. 把这些区间单元格**整段挖掉**之后，行里**再没有别的数字**。
+
+    第 2 条是护栏：``遍历 11.925 约 1–9`` 这种混着写的行**不算**区间行 ——
+    那个写错的具体值仍然会去逐行比对，仍然报 `MISMATCH`。
+
+    判据里**没有**「这行有中文」「这行比较长」「带 ms／ns」这类宽判据：
+    那些会把结构量行（节点大小、次数、字节数）一起放过，等于把检查关掉。
+    """
+    if not INTERVAL.search(line):
+        return False
+    return not NUM.search(INTERVAL.sub(" ", line))
+
+
+def interval_note(line, after_interval):
+    """区间行下面那句说明句：与区间行一起跳过。
+
+    实测写法是「……重跑会随机器负载浮动，因此按区间给，不写单次值。」——
+    它在程序输出里同样找不到，不跟着跳过就会一起报 `NOT-FOUND`。
+
+    两个限制：只有**紧跟在区间行下面**时才算（`after_interval`），
+    并且这句话本身**不含数字**。因此散文里提一句「随机器负载浮动」不会被放过，
+    说明句也不会连带吃掉一行数据。
+    """
+    return bool(after_interval and INTERVAL_NOTE.search(line)
+                and not NUM.search(line))
 
 
 def parse_markdown(path, name):
@@ -424,7 +476,8 @@ def main():
             lines_out.append("[%s] %s:%d %s (%s)" % (tag, p["file"], p["line"], name, flags))
 
     lines_out += ["", "== 输出块逐行比对 =="]
-    n_bad = 0
+    n_bad, n_interval = 0, 0
+    interval_rows = []
     for o in outputs:
         if not o["marked"]:
             continue
@@ -433,9 +486,27 @@ def main():
             lines_out.append("  [跳过 MSVC 输出块] %s:%d" % (o["file"], o["line"]))
             continue
         rows = []
-        for dl in o["code"].split("\n"):
+        after_interval = False
+        for k, dl in enumerate(o["code"].split("\n")):
             if not dl.strip():
                 continue
+            if interval_line(dl):
+                # 3.12 第三节第 2 步：计时量漂到容差以外时正文改成区间。
+                # 区间不来自程序输出，逐行比对只会报 NOT-FOUND，跳过。
+                rows.append(("SKIP-区间写法", dl, "", "按 3.12 第三节第 2 步改成区间"))
+                n_interval += 1
+                interval_rows.append("%s:%d 正文: %s"
+                                     % (o["file"], o["line"] + k, dl.strip()))
+                after_interval = True
+                continue
+            if interval_note(dl, after_interval):
+                rows.append(("SKIP-区间写法", dl, "", "区间行下面的说明句，随区间一起跳过"))
+                n_interval += 1
+                interval_rows.append("%s:%d 正文: %s"
+                                     % (o["file"], o["line"] + k, dl.strip()))
+                after_interval = False
+                continue
+            after_interval = False
             st, d, src, note = index.find(dl)
             if st == "NOT-FOUND":
                 st2, d2, src2, note2 = fail_index.find(dl)
@@ -449,10 +520,15 @@ def main():
         bad = [x for x in rows if x[0] in ("MISMATCH", "NOT-FOUND")]
         drift = [x for x in rows if x[0] == "TIMING-DRIFT"]
         n_bad += len(bad)
-        lines_out.append("  [%s] %s:%d（%d 行，%d 处不一致，%d 处计时漂移）"
+        n_int = len([x for x in rows if x[0] == "SKIP-区间写法"])
+        lines_out.append("  [%s] %s:%d（%d 行，%d 处不一致，%d 处计时漂移%s）"
                          % ("问题" if bad else "一致", o["file"], o["line"],
-                            len(rows), len(bad), len(drift)))
+                            len(rows), len(bad), len(drift),
+                            ("，%d 行区间写法" % n_int) if n_int else ""))
         for st, dl, src, note in rows:
+            if st == "SKIP-区间写法":                 # 单列一类，不计入「不一致」
+                lines_out.append("      %-11s 正文: %s（%s）" % (st, dl.strip(), note))
+                continue
             if st in ("MISMATCH", "NOT-FOUND"):
                 lines_out.append("      %-9s 正文: %s" % (st, dl.strip()))
                 lines_out.append("      %-9s 实际: %s   %s %s"
@@ -465,16 +541,30 @@ def main():
                              % ("漂移", dl.strip(), src.strip(), note))
             drifts.append((o["file"], o["line"], dl.strip(), src.strip(), note))
 
+    lines_out += ["",
+                  "== 区间写法、跳过逐行比对的行（SKIP，%d 行） ==" % n_interval,
+                  "判据：带「约」且形如区间的数值单元格（约 A–B／约 A-B），以及紧跟在"
+                  "区间行下面、",
+                  "写着「随机器负载浮动」「按区间给」的说明句。区间不来自程序输出，"
+                  "因此不算不一致。"]
+    for s in interval_rows:
+        lines_out.append("  [SKIP] 区间写法 %s" % s)
+
     lines_out += ["", "== 汇总 ==",
                   "不一致：%d 处（结构量必须逐位相同；计时量比值 > %.0fx 才算不一致）"
                   % (n_bad, TOLERANCE),
                   "计时漂移（在容差内，仅供参考）：%d 处" % len(drifts),
                   "无名／编不过的块（PROBLEM）：%d 处" % n_problem,
                   "已标节选、跳过编译的块（SKIP）：%d 个" % n_excerpt,
-                  "需 Linux 侧工具链、本机跳过的块（SKIP）：%d 个" % n_linux_skip]
+                  "需 Linux 侧工具链、本机跳过的块（SKIP）：%d 个" % n_linux_skip,
+                  "区间写法、跳过逐行比对的行（SKIP）：%d 行" % n_interval]
     with open(REPORT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines_out) + "\n")
-    print("\n".join(lines_out[lines_out.index("== 汇总 ==") - 1:]))
+    tail_from = lines_out.index("== 汇总 ==") - 1
+    if interval_rows:                      # 控制台也把新分类那几行打出来
+        tail_from = min(tail_from, next(i for i, l in enumerate(lines_out)
+                                        if l.startswith("== 区间写法")))
+    print("\n".join(lines_out[tail_from:]))
     print("\n完整报告：%s" % REPORT)
     return 0
 

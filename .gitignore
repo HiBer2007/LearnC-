@@ -118,3 +118,7 @@ $RECYCLE.BIN/
 # 只放行演示目录下的 exe；其它构建产物（bin/、obj/、build/ 下的）照旧忽略
 !A-教学素材/演示工具/**/*.exe
 !A-教学素材/演示工具/**/*.pdb
+
+# Python 字节码缓存
+__pycache__/
+*.pyc
