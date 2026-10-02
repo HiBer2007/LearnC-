@@ -555,7 +555,7 @@ Last final      1  1  1  0  0  1  1  1
 | trait | 为真的意思 | 谁在用 |
 |---|---|---|
 | `is_trivial` | 默认构造、拷贝、析构都是编译器生成的，且没有任何虚的东西 | 判断能不能像 C 结构体一样对待 |
-| `is_trivially_copyable` | 拷贝一个对象与拷贝它的字节等价 | 容器的增长、`memcpy` 优化（`08-高阶数据结构` 讲容器时会出现） |
+| `is_trivially_copyable` | 拷贝一个对象与拷贝它的字节等价 | 容器的增长、`memcpy` 优化（`09-高阶数据结构` 讲容器时会出现） |
 | `is_standard_layout` | 布局规则与 C 兼容，可以用 `offsetof` | 与 C 交互的接口、序列化 |
 | `is_polymorphic` | 带虚函数（至少一个） | 判断 `dynamic_cast` / `typeid` 能不能给出动态类型（第 5 节） |
 | `is_abstract` | 有纯虚函数，不能直接创建对象 | 接口类 |
@@ -1485,7 +1485,7 @@ is_integral_v<int> = 1，integral<int> = 1（同一个判断）
 | 《04-语法/02-数据类型与类型系统.md》第 3 节 | **前置**：`const` 与 `volatile` |
 | 《07-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 3.5 小节 | 相关：`is_object_v<int&>` 为假，`optional<T&>` 因此不存在 |
 | 《07-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 5.1 小节 | 相关：`std::any` 用 `type_info` 做运行期检查 |
-| 【待补：08-高阶数据结构/】 | **后续**：容器的增长为什么要看 `is_trivially_copyable` |
+| 【待补：09-高阶数据结构/】 | **后续**：容器的增长为什么要看 `is_trivially_copyable` |
 
 ---
 

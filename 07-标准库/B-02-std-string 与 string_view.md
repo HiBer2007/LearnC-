@@ -34,7 +34,7 @@ A 段《07-标准库/A-02-字符串与内存：string.h.md》第 1 节讲的 `st
 | 拷贝构造与移动构造 | 《05-类与面向对象/05-拷贝与移动.md》第 2 节 |
 | RAII：资源在析构时释放 | 《05-类与面向对象/06-RAII 与资源管理.md》第 2 节 |
 | `operator+`、`operator[]`、`operator==` 的重载 | 《05-类与面向对象/09-运算符重载.md》第 3 节 |
-| 迭代器与失效的一般规则 | 《07-标准库/README.md》第二节（容器归 `08-高阶数据结构`） |
+| 迭代器与失效的一般规则 | 《07-标准库/README.md》第二节（容器归 `09-高阶数据结构`） |
 | 异常与 `catch` | 《04-语法/13-异常.md》第 1 节 |
 
 **相邻的章节**：上承《07-标准库/A-02-字符串与内存：string.h.md》，
@@ -1498,6 +1498,6 @@ g++ -std=c++17 wconv.cpp -o wconv.exe            # 期望失败（弃用警告�
 | 《05-类与面向对象/09-运算符重载.md》第 3 节 | 前置：`+`、`[]`、`==` 的重载写法 |
 | 《04-语法/13-异常.md》第 1 节 | 前置：异常与 `catch` |
 | 《01-编译器/02-环境配置.md》第 9.6 小节 | 相关：源文件编码与中文乱码 |
-| `08-高阶数据结构` 板块 | 容器与迭代器的一般失效规则 |
+| `09-高阶数据结构` 板块 | 容器与迭代器的一般失效规则 |
 
 **配套示例见 [`B-examples/07-standard-library/03-cpp-string-text/`](../B-examples/07-standard-library/03-cpp-string-text/)，配套练习见 [`C-templates/07-standard-library/03-cpp-string-text/`](../C-templates/07-standard-library/03-cpp-string-text/)。**

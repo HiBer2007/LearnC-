@@ -167,7 +167,7 @@ int main() {
 `pair<int, char>` 与 `pair<char, int>` 都是 8 字节，说明决定大小的是成员的类型，不是顺序。
 
 `std::map` 的元素类型是 `pair<const Key, T>`，关联容器的 `insert` 返回 `pair<iterator, bool>`。
-容器与算法归 `08-高阶数据结构`，在那之前只需认得出来：**出现 `first` 与 `second` 的地方，多数就是一个 `pair`。**
+容器与算法归 `09-高阶数据结构`，在那之前只需认得出来：**出现 `first` 与 `second` 的地方，多数就是一个 `pair`。**
 
 > [!IMPORTANT]
 > **`pair` 是零开销的二元组**：布局与同序的结构体一致，
@@ -1694,7 +1694,7 @@ as_const 给的是 const 引用：1
 | 《07-标准库/B-09-工具类（下）：type_traits 与 concepts.md》第 6 节 | **后续**：C++20 标准概念库 |
 | 《07-标准库/B-01-输入输出：iostream.md》第 6.2 小节 | 相关：用 `ostringstream` 拼字符串（第 4.2 小节用到） |
 | 《07-标准库/B-01-输入输出：iostream.md》第 3 节 | 相关：`<iomanip>` 的格式化件 |
-| 【待补：08-高阶数据结构/】 | **后续**：`std::map` 与 `pair`、容器与迭代器 |
+| 【待补：09-高阶数据结构/】 | **后续**：`std::map` 与 `pair`、容器与迭代器 |
 
 ---
 

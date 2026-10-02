@@ -32,7 +32,7 @@ C 的那一半在 A 段已经讲透，这里不再重复 `printf` 怎么用，�
 | `extern "C"` 与链接属性 | 《04-语法/11-作用域、生存期与链接.md》第 5 节 |
 
 **相邻的章节**：本章是 B 段的导读，紧接着是《07-标准库/B-01-输入输出：iostream.md》与
-《07-标准库/B-02-std-string 与 string_view.md》。容器、迭代器与算法不在本板块，见 `08-高阶数据结构` 板块；
+《07-标准库/B-02-std-string 与 string_view.md》。容器、迭代器与算法不在本板块，见 `09-高阶数据结构` 板块；
 CRT 实现、ABI 与内存布局见 `06-更底层` 板块。
 
 | 本章各节 | 讲什么 |
@@ -547,7 +547,7 @@ printf 第 2 行
 |---|---|---|
 | `printf`、`iostream`、`fstream` | **本板块** A-01、B-01 | 输入输出的接口 |
 | `std::string`、`string_view` | **本板块** B-02 | 处理文本的工具 |
-| `std::vector`、`std::map`、`std::sort`、迭代器 | **`08-高阶数据结构`** | 它们是数据结构与算法 |
+| `std::vector`、`std::map`、`std::sort`、迭代器 | **`09-高阶数据结构`** | 它们是数据结构与算法 |
 | CRT 的实现、ABI、内存布局、系统调用 | **`06-更底层`** | 属于实现细节 |
 | 类、模板、lambda、异常这些**语言机制** | `04-语法`、`05-类与面向对象` | 已经讲过，这里只讲怎么用现成件 |
 
@@ -944,7 +944,7 @@ g++ -std=c++17 probe_tochars.cpp -o probe_tochars.exe # 期望失败
 | 《04-语法/11-作用域、生存期与链接.md》第 5 节 | 前置：`extern "C"` 与链接属性 |
 | 《05-类与面向对象/01-命名空间与 using.md》第 2 节 | 前置：命名空间与 `::` |
 | 《05-类与面向对象/06-RAII 与资源管理.md》 | 相关：RAII 与资源释放 |
-| `08-高阶数据结构` 板块 | 容器、迭代器、算法 |
+| `09-高阶数据结构` 板块 | 容器、迭代器、算法 |
 | `06-更底层` 板块 | CRT 实现、ABI、内存布局 |
 
 **配套示例见 [`B-examples/07-standard-library/01-c-stdlib-toolbox/`](../B-examples/07-standard-library/01-c-stdlib-toolbox/) 与 [`02-cpp-io-report`](../B-examples/07-standard-library/02-cpp-io-report/)，配套练习见 [`C-templates/07-standard-library/01-c-stdlib-toolbox/`](../C-templates/07-standard-library/01-c-stdlib-toolbox/) 与 [`02-cpp-io-format`](../C-templates/07-standard-library/02-cpp-io-format/)。**
