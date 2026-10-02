@@ -170,7 +170,8 @@ namespace VisualCore
         Border,         // 整格加粗边框
         Triangle,       // 左上角一个三角
         Circle,         // 左上角一个圆
-        Cross           // 左上角一个叉
+        Cross,          // 左上角一个叉
+        Hatch           // 整格斜纹
     }
 
     /// <summary>
@@ -188,7 +189,10 @@ namespace VisualCore
         public Color PanelText;         // 面板正文
         public Color MutedText;         // 面板上的次要说明
         public Color GridLine;          // 网格线
-        public Color CueColor;          // 形状线索的颜色
+        public Color CueColor;          // 形状线索的颜色（本演示不用线索，留给将来的演示）
+        public Color FrameColor;        // 加粗边框的颜色（同上）
+        public Color PathLine;          // 路径折线的主色
+        public Color PathHalo;          // 路径折线的描边色：与主色一起保证压在任何填充色上都看得见
 
         public Color FillOf(ThemeSlot slot) { return fills[(int)slot]; }
         public Color TextOf(ThemeSlot slot) { return texts[(int)slot]; }
@@ -225,12 +229,15 @@ namespace VisualCore
             palette.MutedText = ParseHex("#5F5F5F");
             palette.GridLine = ParseHex("#BDBDBD");
             palette.CueColor = ParseHex("#37474F");
+            palette.FrameColor = ParseHex("#7C8F9E");
+            palette.PathLine = ParseHex("#6A1B9A");     // 深紫：压在浅色底与浅蓝、米黄上都清楚
+            palette.PathHalo = ParseHex("#FFFFFF");     // 白描边：压在路径块与深色块上时靠它分界
             palette.Set(ThemeSlot.Empty, "#FFFFFF", "#1A1A1A");
             palette.Set(ThemeSlot.Terrain, "#F2E3C0", "#1A1A1A");
-            palette.Set(ThemeSlot.Blocked, "#37474F", "#FFFFFF");
+            palette.Set(ThemeSlot.Blocked, "#2E3B45", "#FFFFFF");
             palette.Set(ThemeSlot.Pending, "#FFECB3", "#1A1A1A");
             palette.Set(ThemeSlot.Done, "#90CAF9", "#1A1A1A");
-            palette.Set(ThemeSlot.Active, "#BF360C", "#FFFFFF");
+            palette.Set(ThemeSlot.Active, "#FF6D00", "#3A1A00");
             palette.Set(ThemeSlot.Result, "#6A1B9A", "#FFFFFF");
             palette.Set(ThemeSlot.Start, "#1B5E20", "#FFFFFF");
             palette.Set(ThemeSlot.Goal, "#B71C1C", "#FFFFFF");
@@ -251,11 +258,14 @@ namespace VisualCore
             palette.MutedText = ParseHex("#A8A8A8");
             palette.GridLine = ParseHex("#3C3C3C");
             palette.CueColor = ParseHex("#E8E8E8");
-            palette.Set(ThemeSlot.Empty, "#2B2B2B", "#F0F0F0");
+            palette.FrameColor = ParseHex("#9BB0C0");
+            palette.PathLine = ParseHex("#E1BEE7");     // 浅紫：压在深色底上清楚
+            palette.PathHalo = ParseHex("#1B1B1B");     // 深描边：压在浅紫的路径块上时靠它分界
+            palette.Set(ThemeSlot.Empty, "#303030", "#F0F0F0");
             palette.Set(ThemeSlot.Terrain, "#4A3F2A", "#F0F0F0");
-            palette.Set(ThemeSlot.Blocked, "#101418", "#E0E0E0");
-            palette.Set(ThemeSlot.Pending, "#6D5200", "#FFE9A8");
-            palette.Set(ThemeSlot.Done, "#14405C", "#BBDEFB");
+            palette.Set(ThemeSlot.Blocked, "#0B0E12", "#E0E0E0");            palette.Set(ThemeSlot.Pending, "#6D5200", "#FFE9A8");
+            // 已访问要比墙明显亮：墙是 #0B0E12（相对亮度 0.005），这里是 0.137，差 27 倍
+            palette.Set(ThemeSlot.Done, "#1F6E9C", "#FFFFFF");
             palette.Set(ThemeSlot.Active, "#FF8F00", "#241A00");
             palette.Set(ThemeSlot.Result, "#CE93D8", "#2A0033");
             palette.Set(ThemeSlot.Start, "#66BB6A", "#06280A");
@@ -1805,6 +1815,226 @@ namespace VisualCore
         }
     }
 
+    /// <summary>
+    /// 演示可以额外实现这个接口，让 --layoutcheck 能查它的连线。
+    /// 返回斜段的条数，0 表示每一段都是水平或垂直。
+    /// </summary>
+    public interface IPathInspector
+    {
+        int CountDiagonalSegments(VisualSnapshot snapshot, int cw, int ch, List<string> report);
+
+        /// <summary>量一遍元素上的标注文字，返回放不下的个数（0 表示都放得下）。</summary>
+        int CheckCellText(VisualSnapshot snapshot, TextWriter writer);
+    }
+
+    /// <summary>
+    /// --layoutcheck 的公共部分：把「排得对不对」变成可以机器判的几条，
+    /// 不靠人看截图。要判的有：
+    ///   一、路径折线每一段都是水平或垂直（不出现斜段）；
+    ///   二、图例的色块与文字之间留够固定间距，同一行共用一条基线，整项换行；
+    ///   三、每个按钮的文字加内边距放得下；
+    ///   四、控件都在父控件的可见范围里，同级之间不重叠。
+    /// 任何一条不通过都以非零退出码结束。
+    /// </summary>
+    public static class LayoutCheckHost
+    {
+        public static int Run(IVisualDemo demo, Func<Form> factory, TextWriter writer)
+        {
+            int failures = 0;
+            ThemeKind[] kinds = new ThemeKind[] { ThemeKind.Light, ThemeKind.Dark };
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                ThemeManager.Apply(kinds[i]);
+                string name = ThemeManager.Current == ThemeMode.Dark ? "dark" : "light";
+                using (Form form = factory())
+                {
+                    VisualFormBase shell = form as VisualFormBase;
+                    if (shell != null) shell.ApplyTheme();
+                    writer.WriteLine("theme=" + name + " layout");
+                    failures += CheckControls(form, writer);
+                    failures += CheckButtons(form, writer);
+                    if (shell != null) failures += CheckLegend(shell, writer);
+                    if (shell != null) failures += CheckPath(shell, demo, writer);
+                }
+            }
+            writer.WriteLine(failures == 0
+                ? "layoutcheck result=PASS"
+                : "layoutcheck result=FAIL (" + failures + " 处不合格)");
+            writer.Flush();
+            return failures == 0 ? 0 : 1;
+        }
+
+        /// <summary>控件不许越出父控件的可见范围，同级之间不许重叠，也不许出现两个一模一样的按钮。</summary>
+        private static int CheckControls(Control root, TextWriter writer)
+        {
+            int bad = 0;
+            Rectangle parentBox = new Rectangle(Point.Empty, root.ClientSize);
+            List<Control> siblings = new List<Control>();
+            for (int i = 0; i < root.Controls.Count; i++) siblings.Add(root.Controls[i]);
+            for (int i = 0; i < siblings.Count; i++)
+            {
+                Control child = siblings[i];
+                Rectangle box = child.Bounds;
+                if (!parentBox.Contains(box))
+                {
+                    bad++;
+                    writer.WriteLine("  LOW  " + child.GetType().Name + " [" + Text(child)
+                                     + "] 越出父容器：控件 " + Show(box) + " 父 " + Show(parentBox));
+                }
+                // 按钮与单选钮的文字是固定的，同一种出现两次多半是重复添加。
+                // 标签不查：统计数值的标签一开始都是「-」，查了全是假报。
+                bool checkable = child is Button || child is RadioButton || child is CheckBox;
+                for (int j = i + 1; checkable && j < siblings.Count; j++)
+                {
+                    Control other = siblings[j];
+                    if (child.GetType() == other.GetType() && child.Text.Length > 0
+                        && child.Text == other.Text)
+                    {
+                        bad++;
+                        writer.WriteLine("  LOW  重复控件：" + child.GetType().Name + " [" + Text(child)
+                                         + "] 在同一个容器里出现两次");
+                    }
+                }
+                // 容器（Panel / GroupBox）本来就包着别的控件，只比同级之间的交叠
+                if (!(child is Panel) && !(child is GroupBox))
+                {
+                    for (int j = i + 1; j < siblings.Count; j++)
+                    {
+                        Control other = siblings[j];
+                        if (other is Panel || other is GroupBox) continue;
+                        if (box.IntersectsWith(other.Bounds))
+                        {
+                            bad++;
+                            writer.WriteLine("  LOW  " + child.GetType().Name + " [" + Text(child)
+                                             + "] 与 " + other.GetType().Name + " [" + Text(other)
+                                             + "] 重叠：" + Show(box) + " / " + Show(other.Bounds));
+                        }
+                    }
+                }
+                bad += CheckControls(child, writer);
+            }
+            return bad;
+        }
+
+        private static int CheckButtons(Control root, TextWriter writer)
+        {
+            int bad = 0;
+            for (int i = 0; i < root.Controls.Count; i++)
+            {
+                Control child = root.Controls[i];
+                Button button = child as Button;
+                if (button != null)
+                {
+                    int need = TextRenderer.MeasureText(button.Text, button.Font, new Size(4000, 100),
+                                                        TextFormatFlags.NoPadding).Width;
+                    if (need + 16 > button.Width)
+                    {
+                        bad++;
+                        writer.WriteLine("  LOW  Button [" + button.Text + "] 宽 " + button.Width
+                                         + " 放不下文字 " + need + "（需要 " + (need + 16) + "）");
+                    }
+                }
+                bad += CheckButtons(child, writer);
+            }
+            return bad;
+        }
+
+        private static int CheckLegend(VisualFormBase shell, TextWriter writer)
+        {
+            int bad = 0;
+            LegendPanel legend = shell.Legend;
+            if (legend == null) return 0;
+            legend.Rebuild();
+            IList<LegendEntryLayout> entries = legend.Entries;
+            Rectangle box = new Rectangle(Point.Empty, legend.ClientSize);
+            int lastRow = -1;
+            int baseline = -1;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                LegendEntryLayout item = entries[i];
+                if (item.Swatch.Right + 4 > item.Text.Left)
+                {
+                    bad++;
+                    writer.WriteLine("  LOW  图例项 [" + item.Style.Name + "] 色块右缘 " + item.Swatch.Right
+                                     + " 距文字左缘 " + item.Text.Left + " 不足 4 像素");
+                }
+                if (item.Text.Bottom > box.Height)
+                {
+                    bad++;
+                    writer.WriteLine("  LOW  图例项 [" + item.Style.Name + "] 文字超出图例高度："
+                                     + item.Text.Bottom + " > " + box.Height);
+                }
+                if (item.Row != lastRow)
+                {
+                    lastRow = item.Row;
+                    baseline = item.Text.Top;
+                }
+                else if (item.Text.Top != baseline)
+                {
+                    bad++;
+                    writer.WriteLine("  LOW  图例项 [" + item.Style.Name + "] 与同一行的项不在一条基线上："
+                                     + item.Text.Top + " / " + baseline);
+                }
+            }
+            writer.WriteLine("  note 图例：项数 " + entries.Count + "，行数 " + (lastRow + 1)
+                             + "，行高 " + legend.RowHeight + "，色块间距 " + LegendPanel.SwatchGap);
+            return bad;
+        }
+
+        private static int CheckPath(VisualFormBase shell, IVisualDemo demo, TextWriter writer)
+        {
+            IPathInspector inspector = demo as IPathInspector;
+            if (inspector == null)
+            {
+                writer.WriteLine("  note 折线：本演示没有实现 IPathInspector，跳过");
+                return 0;
+            }
+            // 四方向与八方向各跑一遍：八方向下相邻两格可能落在斜方向上，
+            // 正是「不许出现斜段」这条最容易被违反的地方。
+            int failures = 0;
+            int[] options = new int[] { 0, 1 };
+            for (int k = 0; k < options.Length; k++)
+            {
+                IVisualEngine engine = demo.CreateEngine();
+                engine.Configure(demo.DefaultMode, demo.DefaultOption, options[k]);
+                engine.ResetAll();
+                VisualSnapshot snapshot = new VisualSnapshot(engine.ElementCount);
+                engine.ExportScene(snapshot);
+                for (int i = 0; i < 5000000 && !engine.Finished; i++) engine.StepOnce();
+                engine.RefreshSnapshot(snapshot);
+
+                List<string> report = new List<string>();
+                int diagonal = inspector.CountDiagonalSegments(snapshot, 20, 20, report);
+                string label = options[k] == 0 ? "四方向" : "八方向";
+                for (int i = 0; i < report.Count; i++) writer.WriteLine("  note 折线[" + label + "] " + report[i]);
+                if (diagonal > 0)
+                {
+                    writer.WriteLine("  LOW  折线[" + label + "] 里有 " + diagonal + " 段是斜的");
+                    failures += diagonal;
+                }
+                else
+                {
+                    writer.WriteLine("  note 折线[" + label + "]：全部线段都是水平或垂直（路径代价 "
+                                     + snapshot.PrimaryMetric + "，长度 " + snapshot.SecondaryMetric + "）");
+                }
+                if (options[k] == 1) failures += inspector.CheckCellText(snapshot, writer);
+            }
+            return failures;
+        }
+
+        private static string Text(Control control)
+        {
+            string text = control.Text;
+            if (text.Length > 14) text = text.Substring(0, 14) + "…";
+            return text.Replace("\r", " ").Replace("\n", " ");
+        }
+
+        private static string Show(Rectangle box)
+        {
+            return "(" + box.X + "," + box.Y + "," + box.Width + "x" + box.Height + ")";
+        }
+    }
+
     // ───────────────────────────────────────────────────────────── 界面外壳
 
     /// <summary>
@@ -1859,6 +2089,9 @@ namespace VisualCore
 
         protected GridCanvas Canvas;
         private LegendPanel legend;
+
+        /// <summary>图例控件本身，供 --layoutcheck 查排版。</summary>
+        public LegendPanel Legend { get { return legend; } }
         private ComboBox comboMode;
         private ComboBox comboOption;
         private ComboBox comboOption2;
@@ -1925,11 +2158,11 @@ namespace VisualCore
             StartPosition = FormStartPosition.CenterScreen;
             KeyPreview = true;
             Size canvasSize = Scene.CanvasSize;
-            // 底部留出 26 像素给署名条；控制面板与画布都在它上方，互不遮挡。
-            ClientSize = new Size(12 + canvasSize.Width + 12 + 360 + 12, 12 + 800 + 12 + 26);
-            MinimumSize = new Size(560, 420);
+            // 宽度：画布 + 控制面板 + 边距。高度等画布、图例、提示行都建好后再定，
+            // 因为图例的行数与提示行的行数都要按字体度量算出来。
+            ClientSize = new Size(12 + canvasSize.Width + 12 + 360 + 12, 12 + 820 + 12 + 26);
+            MinimumSize = Size;      // 内容尺寸就是最小尺寸：不允许缩到把面板或画布切掉
             BackColor = ThemeManager.Palette.PanelBackground;
-
             Canvas = new GridCanvas(this);
             Canvas.Location = new Point(12, 12);
             Canvas.Size = canvasSize;
@@ -1939,18 +2172,31 @@ namespace VisualCore
             legend.Location = new Point(12, 12 + canvasSize.Height + 8);
             legend.Size = new Size(canvasSize.Width, 44);
             Controls.Add(legend);
-
+            legend.Rebuild();
+            legend.Height = legend.PreferredHeight;
             Label hint = new Label();
             hint.Text = Scene.HintText;
-            hint.Location = new Point(12, 12 + canvasSize.Height + 56);
-            hint.Size = new Size(canvasSize.Width, 80);
             hint.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5f);
+            // 提示行接在图例下方，按图例实际高度算，图例长高了也不会被压住；
+            // 高度按行数算，最后一行不会被切
+            hint.Location = new Point(12, legend.Bottom + 8);
+            int hintLines = hint.Text.Split('\n').Length;
+            hint.Size = new Size(canvasSize.Width, hintLines * LineHeight(hint.Font) + 4);
             hintLabel = hint;
             Controls.Add(hint);
 
+            // 窗口高度按两列里更高的那一列算：左边是画布 + 图例 + 提示行，
+            // 右边是控制面板。这样两边都不会被窗口切掉。
+            int leftColumn = hint.Bottom + 12;
+            int rightColumn = 12 + 820 + 12;
+            int contentHeight = Math.Max(leftColumn, rightColumn);
+            ClientSize = new Size(ClientSize.Width, contentHeight + 26);
+            MinimumSize = Size;      // 内容尺寸就是最小尺寸：不允许缩到把面板或画布切掉
+            LayoutContent();
+
             panel = new Panel();
             panel.Location = new Point(12 + canvasSize.Width + 12, 12);
-            panel.Size = new Size(360, 800);
+            panel.Size = new Size(360, 820);
             panel.BackColor = ThemeManager.Palette.Surface;
             panel.BorderStyle = BorderStyle.FixedSingle;
             Controls.Add(panel);
@@ -1993,9 +2239,9 @@ namespace VisualCore
             radioInProcess.Size = new Size(78, 22);
             radioInProcess.CheckedChanged += delegate { if (radioInProcess.Checked) SwitchMode(false); };
 
-            labelModeHint = MakeLabel("主题", 206, 139, 36, uiFont);
+            labelModeHint = MakeLabel("主题", 222, 139, 36, uiFont);
             panel.Controls.Add(labelModeHint);
-            comboTheme = MakeThemeCombo(244, 136, 106, uiFont);
+            comboTheme = MakeThemeCombo(258, 136, 92, uiFont);
             comboTheme.SelectedIndexChanged += delegate
             {
                 ThemeManager.Apply((ThemeKind)comboTheme.SelectedIndex);
@@ -2012,7 +2258,7 @@ namespace VisualCore
             trackRate.TickFrequency = 100;
             trackRate.SmallChange = 5;
             trackRate.LargeChange = 25;
-            trackRate.Location = new Point(6, 184);
+            trackRate.Location = new Point(6, 187);
             trackRate.Size = new Size(348, 36);
             trackRate.Value = SpeedControl.PositionForSps(targetSps);
             trackRate.ValueChanged += delegate { ApplyRate(); };
@@ -2085,8 +2331,10 @@ namespace VisualCore
                 toolButtons[i] = button;
             }
 
-            buttonUndo = MakeButton("撤销 Ctrl+Z", 226, 44, 105, 22, uiFont, ButtonUndoClick);
-            buttonUndo.Enabled = false;
+            // 撤销按钮放在工具分组的最后一行：既不在单选钮那一排里挤着，
+            // 也不会被误看成工具之一。按钮始终可点——置灰的文字由系统画，
+            // 颜色不跟主题走，深色下几乎看不清；没有可撤销的落笔时用状态行说明。
+            buttonUndo = MakeButton("撤销 Ctrl+Z", 150, 92, 180, 26, uiFont, ButtonUndoClick);
             groupTools.Controls.Add(buttonUndo);
 
             Label labelBrush = MakeLabel("刷子", 10, 70, 40, uiFont);
@@ -2142,27 +2390,31 @@ namespace VisualCore
 
         private void BuildStats(Font uiFont)
         {
+            // 行高按字体度量算：中文字形比西文高，写死 18 像素会把字的底边切掉
+            int lineHeight = LineHeight(uiFont);
+            int rowStep = lineHeight + 2;
+
             GroupBox groupStats = new GroupBox();
             groupStats.Text = "实时统计（运算进程实测）";
             groupStats.Location = new Point(10, 592);
-            groupStats.Size = new Size(340, 170);
+            groupStats.Size = new Size(340, 14 + Demo.StatNames.Length * rowStep + 8);
             groupStats.Font = uiFont;
             panel.Controls.Add(groupStats);
 
             statValues = new Label[Demo.StatNames.Length];
             for (int i = 0; i < Demo.StatNames.Length; i++)
             {
-                Label caption = MakeLabel(Demo.StatNames[i] + "：", 10, 18 + i * 20, 132, uiFont);
+                Label caption = MakeLabel(Demo.StatNames[i] + "：", 10, 18 + i * rowStep, 132, uiFont);
                 caption.AutoEllipsis = true;
                 groupStats.Controls.Add(caption);
-                Label value = MakeLabel("-", 146, 18 + i * 20, 184, uiFont);
+                Label value = MakeLabel("-", 146, 18 + i * rowStep, 184, uiFont);
                 value.AutoEllipsis = true;          // 放不下就省略号，不硬裁
                 value.Font = new Font("Consolas", 9f);   // 等宽，数字跳动时宽度不抖
                 groupStats.Controls.Add(value);
                 statValues[i] = value;
             }
 
-            labelStatus = MakeLabel("就绪", 10, 756, 340, uiFont);
+            labelStatus = MakeLabel("就绪", 10, groupStats.Bottom + 6, 340, uiFont);
             labelStatus.Font = new Font(uiFont, FontStyle.Bold);
             labelStatus.AutoEllipsis = true;      // 文案再长也只是省略号，不会半个字被切掉
             labelStatus.ForeColor = Color.FromArgb(20, 20, 120);
@@ -2298,12 +2550,23 @@ namespace VisualCore
             return combo;
         }
 
+        /// <summary>
+        /// 一行文字需要多高。按字体实际度量算，不写死常数：
+        /// 中文字形（走字体回退）比西文高一截，写死 18 像素会把字的底边切掉。
+        /// </summary>
+        public static int LineHeight(Font font)
+        {
+            Size size = TextRenderer.MeasureText("国Ag", font, new Size(4000, 100),
+                                                 TextFormatFlags.NoPadding);
+            return Math.Max(16, size.Height + 4);
+        }
+
         protected static Label MakeLabel(string text, int x, int y, int width, Font font)
         {
             Label label = new Label();
             label.Text = text;
             label.Location = new Point(x, y);
-            label.Size = new Size(width, 18);
+            label.Size = new Size(width, LineHeight(font));
             label.Font = font;
             label.TextAlign = ContentAlignment.MiddleLeft;
             return label;
@@ -2767,11 +3030,10 @@ namespace VisualCore
         {
             if (!Scene.CanUndo)
             {
-                labelStatus.Text = "没有可撤销的操作";
+                SetStatus("没有可撤销的操作");
                 return;
             }
             if (!Scene.Undo()) return;
-            buttonUndo.Enabled = Scene.CanUndo;
             AfterSceneEdited("已撤销上一步地图改动");
         }
 
@@ -2791,8 +3053,15 @@ namespace VisualCore
             }
             Snapshot.ClearRunState();
             buttonRun.Text = "开始";
-            labelStatus.Text = message;
+            SetStatus(message);
             Canvas.Invalidate();
+        }
+
+        /// <summary>写状态行（同时更新提示气泡里的全文）。</summary>
+        public void SetStatus(string message)
+        {
+            labelStatus.Text = message;
+            if (statusTip != null) statusTip.SetToolTip(labelStatus, message);
         }
 
         // ── 每帧刷新
@@ -2946,7 +3215,6 @@ namespace VisualCore
             lastDragElement = -1;
             bool changed = Scene.EndGesture() || gestureChanged;
             gestureChanged = false;
-            buttonUndo.Enabled = Scene.CanUndo;
             if (changed) AfterSceneEdited("场景已修改：运行状态已清空，请重新运行");
         }
 
@@ -3206,65 +3474,120 @@ namespace VisualCore
         }
     }
 
-    /// <summary>颜色图例，按场景的配色表画，色块上同时画出形状线索。</summary>
+    /// <summary>图例里一项的位置：色块矩形、文字矩形、所在行。</summary>
+    public sealed class LegendEntryLayout
+    {
+        public StateStyle Style;
+        public Rectangle Swatch;
+        public Rectangle Text;
+        public int Row;
+    }
+
+    /// <summary>
+    /// 颜色图例。位置不靠手写的常数，而是按字体度量算出来：
+    /// 色块与文字之间留固定间距，同一行共用一条基线，
+    /// 一行放不下就把**整项**换到下一行（不逐项错落），高度随行数长。
+    /// </summary>
     public sealed class LegendPanel : Control
     {
+        /// <summary>色块与文字之间的固定间距，自检也查这一条。</summary>
+        public const int SwatchGap = 8;
+        public const int SwatchWidth = 13;
+        public const int SwatchHeight = 12;
+
         private readonly ScenePalette palette;
+        private readonly List<LegendEntryLayout> entries = new List<LegendEntryLayout>();
+        private readonly Font font;
+        private int rowHeight = 19;
 
         public LegendPanel(ScenePalette palette)
         {
             this.palette = palette;
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer
-                     | ControlStyles.UserPaint, true);
+                     | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
             BackColor = ThemeManager.Palette.Surface;
+            font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5f);
+        }
+
+        public IList<LegendEntryLayout> Entries { get { return entries; } }
+
+        public int RowHeight { get { return rowHeight; } }
+
+        public int PreferredHeight { get; private set; }
+
+        /// <summary>按当前字体与宽度排一遍，返回需要的高度。</summary>
+        public int Rebuild()
+        {
+            entries.Clear();
+            List<StateStyle> all = new List<StateStyle>();
+            all.AddRange(palette.States);
+            all.AddRange(palette.Markers);
+            all.AddRange(palette.Extra);
+
+            Size sample = TextRenderer.MeasureText("空地 代价 1", font, new Size(4000, 100),
+                                                   TextFormatFlags.NoPadding);
+            rowHeight = sample.Height + 6;
+            int x = 10, y = 4, row = 0;
+            for (int i = 0; i < all.Count; i++)
+            {
+                int textWidth = TextRenderer.MeasureText(all[i].Name, font, new Size(4000, 100),
+                                                         TextFormatFlags.NoPadding).Width;
+                int need = SwatchWidth + SwatchGap + textWidth;
+                if (x > 10 && x + need > Width - 10)
+                {
+                    x = 10;
+                    y += rowHeight;
+                    row++;
+                }
+                LegendEntryLayout item = new LegendEntryLayout();
+                item.Style = all[i];
+                item.Row = row;
+                item.Swatch = new Rectangle(x, y + (rowHeight - SwatchHeight) / 2, SwatchWidth, SwatchHeight);
+                item.Text = new Rectangle(x + SwatchWidth + SwatchGap, y, textWidth + 2, rowHeight);
+                entries.Add(item);
+                x += need + 14;
+            }
+            PreferredHeight = y + rowHeight + 4;
+            return PreferredHeight;
         }
 
         protected override void OnPaint(PaintEventArgs e)
         {
             Graphics g = e.Graphics;
             ThemePalette theme = ThemeManager.Palette;
-            g.Clear(theme.Surface);
+            using (SolidBrush background = new SolidBrush(theme.Surface))
+            {
+                g.FillRectangle(background, 0, 0, Width, Height);
+            }
             using (Pen border = new Pen(theme.GridLine))
             {
                 g.DrawRectangle(border, 0, 0, Width - 1, Height - 1);
             }
+            if (entries.Count == 0) Rebuild();
 
-            List<StateStyle> entries = new List<StateStyle>();
-            entries.AddRange(palette.States);
-            entries.AddRange(palette.Markers);
-            entries.AddRange(palette.Extra);
-
-            Font font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5f);
-            try
+            TextFormatFlags flags = TextFormatFlags.Left | TextFormatFlags.VerticalCenter
+                                    | TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix
+                                    | TextFormatFlags.EndEllipsis;
+            for (int i = 0; i < entries.Count; i++)
             {
-                int perRow = 5;
-                int columnWidth = (Width - 16) / perRow;
-                int rowHeight = 19;
-                for (int i = 0; i < entries.Count; i++)
+                LegendEntryLayout item = entries[i];
+                Color fill = theme.FillOf(item.Style.Slot);
+                using (SolidBrush brush = new SolidBrush(fill))
                 {
-                    int row = i / perRow, col = i % perRow;
-                    int x = 10 + col * columnWidth;
-                    int y = 4 + row * rowHeight;
-                    Color fill = theme.FillOf(entries[i].Slot);
-                    using (SolidBrush brush = new SolidBrush(fill))
-                    {
-                        g.FillRectangle(brush, x, y + 3, 13, 12);
-                    }
-                    using (Pen pen = new Pen(theme.GridLine))
-                    {
-                        g.DrawRectangle(pen, x, y + 3, 13, 12);
-                    }
-                    DrawCue(g, entries[i].Cue, x, y + 3, 13, 12, theme);
-                    TextRenderer.DrawText(g, entries[i].Name, font, new Point(x + 18, y + 2),
-                                          theme.PanelText,
-                                          TextFormatFlags.NoPadding | TextFormatFlags.NoPrefix
-                                          | TextFormatFlags.EndEllipsis);
+                    g.FillRectangle(brush, item.Swatch);
                 }
+                using (Pen pen = new Pen(theme.GridLine))
+                {
+                    g.DrawRectangle(pen, item.Swatch.X, item.Swatch.Y, item.Swatch.Width - 1, item.Swatch.Height - 1);
+                }
+                DrawCue(g, item.Style.Cue, item.Swatch, theme);
+                TextRenderer.DrawText(g, item.Style.Name, font, item.Text, theme.PanelText, flags);
             }
-            finally
-            {
-                font.Dispose();
-            }
+        }
+
+        public static void DrawCue(Graphics g, CueKind cue, Rectangle box, ThemePalette theme)
+        {
+            DrawCue(g, cue, box.X, box.Y, box.Width, box.Height, theme);
         }
 
         /// <summary>把形状线索画在色块上。图例与画布用同一套画法，读者才对得上。</summary>
@@ -3283,7 +3606,7 @@ namespace VisualCore
                     }
                     break;
                 case CueKind.Border:
-                    using (Pen pen = new Pen(color, 2f))
+                    using (Pen pen = new Pen(theme.FrameColor, 2f))
                     {
                         g.DrawRectangle(pen, x + 1, y + 1, width - 3, height - 3);
                     }
@@ -3310,6 +3633,21 @@ namespace VisualCore
                         g.DrawLine(pen, x + 2, y + 2, x + 2 + size * 2, y + 2 + size * 2);
                         g.DrawLine(pen, x + 2 + size * 2, y + 2, x + 2, y + 2 + size * 2);
                     }
+                    break;
+                case CueKind.Hatch:
+                    // 斜纹：墙用这个，颜色之外再给一层纹理，深浅两套主题下都与「已访问」分得开。
+                    // 必须裁到自己的格子里——不裁的话斜线会爬到旁边的格子上，
+                    // 邻格看上去也成了墙，纹理的含义就毁了。
+                    Region saved = g.Clip;
+                    g.SetClip(new Rectangle(x, y, width, height));
+                    using (Pen pen = new Pen(color, 1f))
+                    {
+                        for (int offset = -height; offset < width; offset += 5)
+                        {
+                            g.DrawLine(pen, x + offset, y + height, x + offset + height, y);
+                        }
+                    }
+                    g.Clip = saved;
                     break;
             }
         }
@@ -3362,6 +3700,7 @@ namespace VisualCore
         {
             bool selfTest = false;
             bool paletteCheck = false;
+            bool layoutCheck = false;
             bool worker = false;
             int port = 0;
             string shmName = "";
@@ -3372,6 +3711,7 @@ namespace VisualCore
                 string argument = args[i];
                 if (string.Equals(argument, "--selftest", StringComparison.OrdinalIgnoreCase)) selfTest = true;
                 else if (string.Equals(argument, "--palettecheck", StringComparison.OrdinalIgnoreCase)) paletteCheck = true;
+                else if (string.Equals(argument, "--layoutcheck", StringComparison.OrdinalIgnoreCase)) layoutCheck = true;
                 else if (string.Equals(argument, "--worker", StringComparison.OrdinalIgnoreCase)) worker = true;
                 else if (string.Equals(argument, "--trace", StringComparison.OrdinalIgnoreCase)) WorkerTrace.Enabled = true;
                 else if (argument.StartsWith("--theme=", StringComparison.Ordinal))
@@ -3402,6 +3742,15 @@ namespace VisualCore
                 SelfTestHost.Result(writer, passed);
                 writer.Flush();
                 return passed ? 0 : 1;
+            }
+
+            if (layoutCheck)
+            {
+                TextWriter writer = SelfTestHost.OpenStandardOutput();
+                writer.WriteLine("layoutcheck 只建窗体对象，不显示窗口，也不起运算进程");
+                int code = LayoutCheckHost.Run(demo, formFactory, writer);
+                writer.Flush();
+                return code;
             }
 
             if (paletteCheck)

@@ -46,7 +46,7 @@ namespace SearchDemo
     {
         public const int DefaultWidth = 48;      // 地图宽（格）
         public const int DefaultHeight = 32;     // 地图高（格）
-        public const int CellSize = 20;          // 每格像素边长
+        public const int CellSize = 20;          // 每格像素边长（回到最初的尺寸）
         public const int StartX = 2, StartY = 2;
         public const int GoalX = 45, GoalY = 29;
         public const int DefaultSeed = 12345;
@@ -1065,8 +1065,9 @@ namespace SearchDemo
         private readonly ToolDescriptor[] tools;
         private readonly int[] brushSizes = { 1, 3, 5 };
         private readonly UndoStack undo = new UndoStack();
-        private readonly Font font = new Font("Consolas", 8f, GraphicsUnit.Pixel);
-        private readonly Font smallFont = new Font("Consolas", 7f, GraphicsUnit.Pixel);
+        // 格上标注统一用这一个字号，不再为塞下长数字而换小号字——
+        // 空间从标注内容里省（见 Compact），不从字号里省。
+        private static readonly Font font = new Font("Consolas", 11f, GraphicsUnit.Pixel);
 
         private int startX = Const.StartX, startY = Const.StartY;
         private int goalX = Const.GoalX, goalY = Const.GoalY;
@@ -1080,16 +1081,18 @@ namespace SearchDemo
         {
             map = MapGen.Generate(seed);
 
+            // 状态只用填充色区分（作者 2026-10-02 决定）：不加叉、角点、三角、圆、边框这些线索。
+            // 唯一保留的图形元素是最终路径的折线，见 DrawPathLine。
             palette.AddState(ElementStates.Empty, "空地 代价 1", ThemeSlot.Empty);
-            palette.AddState(ElementStates.Pending, "待访问 open", ThemeSlot.Pending, CueKind.CornerDot);
-            palette.AddState(ElementStates.Done, "已访问 closed", ThemeSlot.Done, CueKind.Cross);
-            palette.AddState(ElementStates.Active, "当前展开的节点", ThemeSlot.Active, CueKind.Border);
-            palette.AddState(ElementStates.Result, "最终路径", ThemeSlot.Result, CueKind.Circle);
+            palette.AddState(ElementStates.Pending, "待访问 open", ThemeSlot.Pending);
+            palette.AddState(ElementStates.Done, "已访问 closed", ThemeSlot.Done);
+            palette.AddState(ElementStates.Active, "当前展开的节点", ThemeSlot.Active);
+            palette.AddState(ElementStates.Result, "最终路径", ThemeSlot.Result);
             palette.AddState(ElementStates.Blocked, "墙（不可通行）", ThemeSlot.Blocked);
-            palette.AddMarker(Const.MarkerStart, "起点", ThemeSlot.Start, CueKind.Triangle);
-            palette.AddMarker(Const.MarkerGoal, "终点", ThemeSlot.Goal, CueKind.Circle);
+            palette.AddMarker(Const.MarkerStart, "起点", ThemeSlot.Start, CueKind.None);
+            palette.AddMarker(Const.MarkerGoal, "终点", ThemeSlot.Goal, CueKind.None);
             palette.AddExtra("空地 代价 2-9", ThemeSlot.Terrain, CueKind.None);
-            palette.AddExtra("路径连线", ThemeSlot.Result, CueKind.Border);
+            palette.AddExtra("路径连线", ThemeSlot.Result, CueKind.None);
 
             tools = new ToolDescriptor[]
             {
@@ -1232,9 +1235,8 @@ namespace SearchDemo
                         ? palette.FindMarker(snapshot.Marker[index])
                         : palette.FindState(snapshot.State[index]);
                     Color color = style == null ? theme.PanelText : theme.TextOf(style.Slot);
-                    // 数字长了就换小一号字，免得 20 像素的格子里被裁掉半个字符。
-                    Font use = text.Length >= 5 ? smallFont : font;
-                    TextRenderer.DrawText(g, text, use, new Rectangle(x * cw, y * ch, cw, ch), color, flags);
+                    // 字号只有一个，不为塞下长数字换小号字；文字已在 Compact 里压到三字符以内
+                    TextRenderer.DrawText(g, text, font, new Rectangle(x * cw, y * ch, cw, ch), color, flags);
                 }
             }
 
@@ -1252,27 +1254,193 @@ namespace SearchDemo
             }
         }
 
-        /// <summary>把最终路径按格心连成折线。</summary>
+        /// <summary>
+        /// 把最终路径按格心连成折线。
+        ///
+        /// 两个要点：
+        /// 一是**顺序**。路径格子必须按搜索走的次序连，不能按格子下标连——
+        /// 按下标连会把不相邻的格子接起来，屏幕上就出现一段段斜线。
+        /// 路径上每一步的 g 都严格递增（每步至少加最小代价），因此按 g 升序排就是路径次序。
+        /// 二是**只许横竖**。相邻两格若落在斜方向上（八方向模式），
+        /// 也拆成「先横后竖」两段，拐点在两格之间，绝不画斜段。
+        /// </summary>
         private void DrawPathLine(Graphics g, VisualSnapshot snapshot, int cw, int ch, ThemePalette theme)
         {
             if (snapshot.PrimaryMetric < 0) return;
-            int previous = -1;
-            using (Pen pen = new Pen(theme.TextOf(ThemeSlot.Result), 2f))
+            List<PathSegment> segments = PathSegments(snapshot, cw, ch);
+            if (segments.Count == 0) return;
+            // 两遍描：先粗一圈描边色，再压主色。折线会跨过空地、地形、已访问、墙这些
+            // 不同底色，单色做不到在每种底色上都清楚，两色一起就能保证总有一色分得开。
+            using (Pen halo = new Pen(theme.PathHalo, 4f))
+            using (Pen line = new Pen(theme.PathLine, 2.6f))
             {
-                for (int index = 0; index < snapshot.Elements; index++)
+                halo.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                line.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                for (int i = 0; i < segments.Count; i++)
                 {
-                    if (snapshot.State[index] != ElementStates.Result) continue;
-                    if (previous >= 0)
-                    {
-                        g.DrawLine(pen,
-                                   previous % Const.DefaultWidth * cw + cw / 2,
-                                   previous / Const.DefaultWidth * ch + ch / 2,
-                                   index % Const.DefaultWidth * cw + cw / 2,
-                                   index / Const.DefaultWidth * ch + ch / 2);
-                    }
-                    previous = index;
+                    g.DrawLine(halo, segments[i].X1, segments[i].Y1, segments[i].X2, segments[i].Y2);
+                }
+                for (int i = 0; i < segments.Count; i++)
+                {
+                    g.DrawLine(line, segments[i].X1, segments[i].Y1, segments[i].X2, segments[i].Y2);
                 }
             }
+        }
+
+        /// <summary>
+        /// 自检用：把五种「元素上标」模式都走一遍，量最宽的标注文字，
+        /// 返回放不下的格子数（0 表示都放得下）。字号不许为了塞下而调小，
+        /// 放不下就该放大格子或缩短标注。
+        /// </summary>
+        public int CheckCellText(VisualSnapshot snapshot, TextWriter writer)
+        {
+            int cell = Const.CellSize;
+            int over = 0;
+            // .NET Framework 的 TextRenderer 度量里带一段与字数无关的余量（约 7 像素），
+            // 空串又量成 0，因此不能靠减空串去掉。Consolas 是等宽字体，
+            // 用「两个字符的宽度减一个字符的宽度」得到真正的字符宽度，再乘字数。
+            int one = TextRenderer.MeasureText("0", font, new Size(4000, 100),
+                                               TextFormatFlags.NoPadding).Width;
+            int two = TextRenderer.MeasureText("00", font, new Size(4000, 100),
+                                               TextFormatFlags.NoPadding).Width;
+            int advance = two - one;
+            int worst = 0;
+            string worstText = "";
+            SceneViewState view = new SceneViewState();
+            for (int mode = 0; mode <= 4; mode++)
+            {
+                view.DisplayMode = mode;
+                for (int i = 0; i < snapshot.Elements; i++)
+                {
+                    string text = ElementText(i, snapshot, view);
+                    if (text.Length == 0) continue;
+                    int width = text.Length * advance;
+                    if (width > worst)
+                    {
+                        worst = width;
+                        worstText = text;
+                    }
+                    if (width > cell) over++;
+                }
+            }
+            writer.WriteLine("  note 字符宽度 = " + advance + " 像素（等宽字体，两次度量之差）");
+            writer.WriteLine("  note 格上标注：格子 " + cell + " 像素，字体 " + font.Name + " "
+                             + font.Size.ToString("0.#", CultureInfo.InvariantCulture) + " "
+                             + font.Unit + "（行高 " + font.Height + "），最宽的一处 [" + worstText + "] 需 " + worst
+                             + " 像素，放不下的格子数 " + over);
+            return over;
+        }
+
+        /// <summary>路径点在画布上的坐标。</summary>
+        public struct PathPoint
+        {
+            public int X;
+            public int Y;
+            public int Element;
+        }
+
+        /// <summary>
+        /// 取出路径点列，顺序就是搜索走的次序。绘制与自检共用这一份，
+        /// 因此自检断言的就是屏幕上画的那条线。
+        /// </summary>
+        public static List<PathPoint> PathPoints(VisualSnapshot snapshot, int cw, int ch)
+        {
+            List<PathPoint> points = new List<PathPoint>();
+            for (int index = 0; index < snapshot.Elements; index++)
+            {
+                if (snapshot.State[index] != ElementStates.Result) continue;
+                PathPoint point = new PathPoint();
+                point.Element = index;
+                point.X = index % Const.DefaultWidth * cw + cw / 2;
+                point.Y = index / Const.DefaultWidth * ch + ch / 2;
+                points.Add(point);
+            }
+            points.Sort(delegate(PathPoint a, PathPoint b)
+            {
+                return snapshot.Attr1[a.Element].CompareTo(snapshot.Attr1[b.Element]);
+            });
+            return points;
+        }
+
+        /// <summary>
+        /// 实际画出去的线段。绘制与自检都用这一份，因此自检断言的就是屏幕上的线。
+        /// 相邻两格落在斜方向上时，这里拆成「先横后竖」两段，绝不产出斜段。
+        /// </summary>
+        public static List<PathSegment> PathSegments(VisualSnapshot snapshot, int cw, int ch)
+        {
+            List<PathPoint> points = PathPoints(snapshot, cw, ch);
+            List<PathSegment> segments = new List<PathSegment>();
+            for (int i = 1; i < points.Count; i++)
+            {
+                PathPoint a = points[i - 1];
+                PathPoint b = points[i];
+                if (a.Y == b.Y || a.X == b.X)
+                {
+                    PathSegment straight = new PathSegment();
+                    straight.X1 = a.X; straight.Y1 = a.Y; straight.X2 = b.X; straight.Y2 = b.Y;
+                    straight.Split = false;
+                    segments.Add(straight);
+                }
+                else
+                {
+                    PathSegment first = new PathSegment();
+                    first.X1 = a.X; first.Y1 = a.Y; first.X2 = b.X; first.Y2 = a.Y;   // 先横
+                    first.Split = true;
+                    segments.Add(first);
+                    PathSegment second = new PathSegment();
+                    second.X1 = b.X; second.Y1 = a.Y; second.X2 = b.X; second.Y2 = b.Y;  // 后竖
+                    second.Split = true;
+                    segments.Add(second);
+                }
+            }
+            return segments;
+        }
+
+        /// <summary>画出去的一段线：两点加一个「是不是斜走拆出来的」标记。</summary>
+        public struct PathSegment
+        {
+            public int X1;
+            public int Y1;
+            public int X2;
+            public int Y2;
+            public bool Split;
+        }
+
+        /// <summary>
+        /// 自检用：检查**实际画出去**的每一段是不是水平或垂直，返回斜段的条数。
+        /// 顺便报出有多少处斜走被拆成了 L 形。
+        /// </summary>
+        public static int CountDiagonalSegments(VisualSnapshot snapshot, int cw, int ch, List<string> report)
+        {
+            List<PathSegment> segments = PathSegments(snapshot, cw, ch);
+            int diagonal = 0;
+            int split = 0;
+            for (int i = 0; i < segments.Count; i++)
+            {
+                PathSegment segment = segments[i];
+                bool horizontal = segment.Y1 == segment.Y2;
+                bool vertical = segment.X1 == segment.X2;
+                if (segment.Split) split++;
+                if (!horizontal && !vertical)
+                {
+                    diagonal++;
+                    if (report != null)
+                    {
+                        report.Add("seg " + (i + 1) + ": (" + segment.X1 + "," + segment.Y1 + ")->("
+                                   + segment.X2 + "," + segment.Y2 + ") 斜段");
+                    }
+                }
+                else if (report != null && i < 12)
+                {
+                    report.Add("seg " + (i + 1) + ": (" + segment.X1 + "," + segment.Y1 + ")->("
+                               + segment.X2 + "," + segment.Y2 + ") " + (horizontal ? "水平" : "垂直"));
+                }
+            }
+            if (report != null)
+            {
+                report.Add("共 " + segments.Count + " 段，其中 " + split / 2 + " 处斜走拆成了 L 形");
+            }
+            return diagonal;
         }
 
         /// <summary>
@@ -1287,30 +1455,38 @@ namespace SearchDemo
             switch (viewState.DisplayMode)
             {
                 case 1:
-                    if (snapshot.Attr1[element] >= 0) return Fits(SearchAlgorithm.ShortCostText(snapshot.Attr1[element]), snapshot.Attr1[element]);
+                    if (snapshot.Attr1[element] >= 0) return Compact(snapshot.Attr1[element]);
                     break;
                 case 2:
-                    if (snapshot.Attr2[element] >= 0) return Fits(SearchAlgorithm.ShortCostText(snapshot.Attr2[element]), snapshot.Attr2[element]);
+                    if (snapshot.Attr2[element] >= 0) return Compact(snapshot.Attr2[element]);
                     break;
                 case 3:
-                    if (snapshot.Attr3[element] >= 0) return Fits(SearchAlgorithm.ShortCostText(snapshot.Attr3[element]), snapshot.Attr3[element]);
+                    if (snapshot.Attr3[element] >= 0) return Compact(snapshot.Attr3[element]);
                     break;
                 case 4:
                     if (snapshot.Attr4[element] > 0)
-                        return snapshot.Attr4[element].ToString(CultureInfo.InvariantCulture);
+                    {
+                        int order = snapshot.Attr4[element];
+                        return order < 1000 ? order.ToString(CultureInfo.InvariantCulture) : "1k+";
+                    }
                     break;
             }
             return cost.ToString(CultureInfo.InvariantCulture);
         }
 
         /// <summary>
-        /// 20 像素的格子只放得下四个字符。八方向模式下 g 会累到三位数带小数，
-        /// 这种就取整，宁可少一位小数，也不让半个数字被裁掉。
+        /// 格上标注一律压到**三个字符以内**：格子 20 像素、字号 11 像素，
+        /// 三个字符刚好放得下，四个就会被裁。
+        ///
+        /// 空间是从标注内容里省的，不是从字号里省的：
+        /// 代价用千分之一为单位，这里四舍五入到整数（`123.4` 写成 `123`）；
+        /// 到一千以上再省就失真了，写成 `1k+`，表示「一千以上」。
         /// </summary>
-        private static string Fits(string text, int milli)
+        private static string Compact(int milli)
         {
-            if (text.Length <= 4) return text;
-            return SearchAlgorithm.CostText(milli / 1000 * 1000);
+            int value = (milli + 500) / 1000;
+            if (value >= 1000) return "1k+";
+            return value.ToString(CultureInfo.InvariantCulture);
         }
 
         // ── 工具
@@ -1481,8 +1657,20 @@ namespace SearchDemo
     // ───────────────────────────────────────────────────────────── 演示定义
 
     /// <summary>搜索演示：下拉里的名字、引擎与场景的工厂、状态文案、自测。</summary>
-    internal sealed class SearchDemoApp : IVisualDemo
+    internal sealed class SearchDemoApp : IVisualDemo, IPathInspector
     {
+        /// <summary>把路径折线的自检转给场景：--layoutcheck 用它断言不出现斜段。</summary>
+        public int CountDiagonalSegments(VisualSnapshot snapshot, int cw, int ch, List<string> report)
+        {
+            return SearchScene.CountDiagonalSegments(snapshot, cw, ch, report);
+        }
+
+        /// <summary>量格上标注：八方向下数值最长，这里量的是最坏情况。</summary>
+        public int CheckCellText(VisualSnapshot snapshot, TextWriter writer)
+        {
+            return new SearchScene().CheckCellText(snapshot, writer);
+        }
+
         public string Name { get { return "搜索算法演示"; } }
 
         public string[] ModeNames
@@ -1680,6 +1868,8 @@ namespace SearchDemo
 
         protected override int BuildExtraControls(Panel host, int y, Font font)
         {
+            // 三行按钮，全部排在这一块里。撤销按钮由通用外壳放在「工具」分组里，
+            // 这里不再重复放一个，免得出现两个一样的按钮。
             Button newMap = MakeButton("换一张地图", 10, y, 166, 30, font, ButtonNewMapClick);
             host.Controls.Add(newMap);
             Button clearWalls = MakeButton("清空墙", 184, y, 166, 30, font, ButtonClearWallsClick);
@@ -1687,11 +1877,14 @@ namespace SearchDemo
             Button scatter = MakeButton("随机撒墙", 10, y + 34, 166, 30, font, ButtonScatterClick);
             host.Controls.Add(scatter);
 
-            host.Controls.Add(MakeLabel("种子", 184, y + 39, 40, font));
+            Label seedLabel = MakeLabel("种子", 178, y + 40, 40, font);
+            host.Controls.Add(seedLabel);
             boxSeed = new TextBox();
-            boxSeed.Location = new Point(222, y + 36);
+            boxSeed.Location = new Point(222, y + 37);
             boxSeed.Size = new Size(64, 24);
             boxSeed.Font = font;
+            boxSeed.ForeColor = ThemeManager.Palette.PanelText;
+            boxSeed.BackColor = ThemeManager.Palette.Surface;
             host.Controls.Add(boxSeed);
             Button useSeed = MakeButton("生成", 290, y + 34, 60, 28, font, ButtonUseSeedClick);
             host.Controls.Add(useSeed);
