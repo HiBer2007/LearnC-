@@ -56,7 +56,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe /nologo /target:winexe `
 `Text`
 
 ```text
-csc.exe 退出码 0，无警告；DsDemo.exe 161,280 字节。
+csc.exe 退出码 0，无警告；DsDemo.exe 163,328 字节。
 ```
 
 ### 方式二：dotnet SDK
@@ -72,7 +72,7 @@ dotnet build -c Release
 `Text`
 
 ```text
-已成功生成。0 个警告，0 个错误。产物在 bin\Release\net48\DsDemo.exe，143,360 字节。
+已成功生成。0 个警告，0 个错误。产物在 bin\Release\net48\DsDemo.exe，145,408 字节。
 两种编法的 --selftest 输出逐行相同，只有计时行不同：
   csc 版    perf 最快 1.71 ms、最慢 1.76 ms
   dotnet 版 perf 最快 1.93 ms、最慢 2.60 ms
@@ -139,6 +139,29 @@ dotnet build -c Release
 | 已压缩／旁路 | `#C8E6C9` | `#2E5339` | 路径压缩改过的节点 |
 
 色值与对比度见「主题与配色」一节。
+
+### 字号
+
+**节点键值用 13 像素 Consolas 粗体，小一号的地方用 12 像素**——作者 2026-10-02 的字号纪律
+（演示里最不能小的是数字）。字号按像素给，由 `_common/VisualCore.cs` 的 `VisualFonts` 统一管；
+判据是**在 100% 缩放下不开大窗口就能读**。盒子放不下时先减同屏元素，**不把字号缩回去**；
+`tiny` 只降一档，且仍在数字字号下限（12 像素）之上。
+
+`实测数据`
+`Text`
+
+```text
+  note 字号下限：数字不低于 12 像素，低于它即判失败
+  note 字号 界面文字：Microsoft YaHei UI 8.5 磅（行高 15 像素）（面板、图例、提示）
+  note 字号 状态数字：Consolas 12 像素（行高 15 像素）（状态栏与统计）
+  note 字号 节点键值：Consolas 13 像素（行高 16 像素），写在结构单元里（盒高大于 16 像素）
+  note 字号 小格数字：Consolas 12 像素（行高 15 像素），盒高不超过 16 像素时用这一档
+check min_digit_font_at_least_12: PASS (本演示的最小数字字号 12 像素（小格数字），节点键值 13 像素)
+  note 标注：量了 807 段，最宽的一段 [next 空] 需 50 像素，最宽的矩形 96 像素，放不下的段数 0（显示模式 4 种 × 场景 10 个）
+```
+
+这七行来自 `--layoutcheck`，量的是**屏幕上真画的那一份**：绘制与自检共用同一个函数，
+因此字号、内容、矩形三者不会各说各话。
 
 ### 工具与直接操作
 
@@ -475,6 +498,10 @@ theme=light controls=70 titlebar=0 attr=20
   ok   SignatureBar   fore=#1A1A1A back=#FAFAFA contrast=16.67
   ok   GridCanvas     fore=#1A1A1A back=#F4F4F4 contrast=15.82
   …
+  pair 面板正文/面板底         fore=#1A1A1A back=#F7F7F7 contrast=16.25
+  pair 次要说明/面板底         fore=#5F5F5F back=#F7F7F7 contrast=5.96
+  pair 图例文字/图例底         fore=#1A1A1A back=#FAFAFA contrast=16.67
+  pair 署名/署名条底          fore=#1A1A1A back=#FAFAFA contrast=16.67
 theme=light checked=69 low_contrast=0
 theme=dark controls=70 titlebar=1 attr=20
   ok   SignatureBar   fore=#E8E8E8 back=#252525 contrast=12.51
@@ -486,6 +513,8 @@ palettecheck result=PASS (全部控件的对比度都不低于 4.5:1)
 ```
 
 70 个控件里有 1 个是窗体自身，因此逐控件检查的是 69 个。
+末尾那四行 `pair` 是「底色 + 字色」的固定搭配（面板、图例、署名条）——
+它们同样落在控件上，单列出来是为了让文档里的对比度表整表都能在输出里找到；不计入 `checked`。
 
 ### `--layoutcheck`：文字放不下与斜段都判失败
 
@@ -507,6 +536,9 @@ palettecheck result=PASS (全部控件的对比度都不低于 4.5:1)
 
 ```text
 layoutcheck 只建窗体对象，不显示窗口，也不起运算进程
+  note 字号下限：数字不低于 12 像素，低于它即判失败
+  note 字号 界面文字：Microsoft YaHei UI 8.5 磅（行高 15 像素）（面板、图例、提示）
+  note 字号 状态数字：Consolas 12 像素（行高 15 像素）（状态栏与统计）
 theme=light layout
   note 图例：项数 12，行数 2，行高 23，色块间距 8
   note 折线[四方向] 1 动态数组的增长：线 2 段，斜段 0
@@ -514,8 +546,11 @@ theme=light layout
   note 折线[四方向] 反例：一条 (0,0)->(12,9) 的斜线被判出 1 段（应当是 1）
   note 折线[四方向] 合计 230 段线，斜段 0
   note 折线[八方向] 合计 254 段线，斜段 0
-  note 文字度量：等宽数字每字符 6 像素，度量里的固定余量 7 像素（已扣掉）
-  note 标注：量了 819 段，最宽的一段 [next 空] 需 34 像素，最宽的矩形 96 像素，放不下的段数 0（显示模式 4 种 × 场景 10 个）
+  note 文字度量：等宽数字每字符 7 像素，度量里的固定余量 7 像素（已扣掉）
+  note 字号 节点键值：Consolas 13 像素（行高 16 像素），写在结构单元里（盒高大于 16 像素）
+  note 字号 小格数字：Consolas 12 像素（行高 15 像素），盒高不超过 16 像素时用这一档
+check min_digit_font_at_least_12: PASS (本演示的最小数字字号 12 像素（小格数字），节点键值 13 像素)
+  note 标注：量了 807 段，最宽的一段 [next 空] 需 50 像素，最宽的矩形 96 像素，放不下的段数 0（显示模式 4 种 × 场景 10 个）
 theme=dark layout
   （同上）
 layoutcheck result=PASS
@@ -597,7 +632,7 @@ Marker 是命令序号，Attr0 到 Attr2 是命令码与两个参数。
 压在线的描边上时笔画芯部会被混成描边色，看上去就是「数字糊成影子」。
 本演示的做法是：**先用所在块的填充色把字位（上下左右各 1 像素）盖一遍，再画字**，
 只对真正与连线相交的字位做，因此连线在字的两侧照常连着；**字一律用粗体**
-（11 像素 Consolas 粗体，小一号的地方用 10 像素粗体）。
+（13 像素 Consolas 粗体，小一号的地方用 12 像素粗体，见「字号」一节）。
 
 ### 装饰性的格子线不算连线
 

@@ -4075,9 +4075,12 @@ namespace DsDemo
         private readonly ScenePalette palette = DsPalette.Build();
         private readonly DsView view = new DsView();
         private readonly List<DsRun> runs = new List<DsRun>();
-        private readonly Font cell = new Font("Consolas", 11f, FontStyle.Bold, GraphicsUnit.Pixel);
-        private readonly Font tiny = new Font("Consolas", 10f, FontStyle.Bold, GraphicsUnit.Pixel);
-        private readonly Font note = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5f);
+        // 字号按像素给，由 VisualCore 的字号表统一管：数字不许低于 MinimumDigitPx，
+        // --layoutcheck 会把这两档打出来并断言。放不下时的做法是减少同屏元素，
+        // 不是把字号缩回去；tiny 只降一档，且仍在数字字号下限之上。
+        private readonly Font cell = VisualFonts.DigitFont(13f);
+        private readonly Font tiny = VisualFonts.DigitFont(12f);
+        private readonly Font note = VisualFonts.UiFont();
 
         private int selected = -1;
         private int pendingOp, pendingKey, pendingTarget;
@@ -4790,9 +4793,16 @@ namespace DsDemo
             }
             writer.WriteLine("  note 文字度量：等宽数字每字符 " + advance + " 像素，度量里的固定余量 "
                              + overhang + " 像素（已扣掉）");
+            writer.WriteLine(VisualFonts.Line("节点键值", cell, "，写在结构单元里（盒高大于 16 像素）"));
+            writer.WriteLine(VisualFonts.Line("小格数字", tiny, "，盒高不超过 16 像素时用这一档"));
+            bool fontOk = SelfTestHost.Check(writer, "min_digit_font_at_least_"
+                + VisualFonts.MinimumDigitPx.ToString("0.#", CultureInfo.InvariantCulture),
+                VisualFonts.DigitOk(cell) && VisualFonts.DigitOk(tiny),
+                "本演示的最小数字字号 " + tiny.Size.ToString("0.#", CultureInfo.InvariantCulture)
+                + " 像素（小格数字），节点键值 " + cell.Size.ToString("0.#", CultureInfo.InvariantCulture) + " 像素");
             writer.WriteLine("  note 标注：量了 " + used + " 段，最宽的一段 [" + worstText + "] 需 " + worst
                              + " 像素，最宽的矩形 " + widest + " 像素，放不下的段数 " + over + "（显示模式 4 种 × 场景 10 个）");
-            return over;
+            return over + (fontOk ? 0 : 1);
         }
 
         /// <summary>TextRenderer 的宽度里带一段与字数无关的余量，用两次度量之差把它求出来。</summary>

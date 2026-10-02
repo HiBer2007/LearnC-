@@ -46,7 +46,7 @@ namespace SearchDemo
     {
         public const int DefaultWidth = 48;      // 地图宽（格）
         public const int DefaultHeight = 32;     // 地图高（格）
-        public const int CellSize = 20;          // 每格像素边长（回到最初的尺寸）
+        public const int CellSize = 24;          // 每格像素边长（字号放大后 20 像素放不下三个字符，见 README「字号」一节）
         public const int StartX = 2, StartY = 2;
         public const int GoalX = 45, GoalY = 29;
         public const int DefaultSeed = 12345;
@@ -1067,7 +1067,8 @@ namespace SearchDemo
         private readonly UndoStack undo = new UndoStack();
         // 格上标注统一用这一个字号，不再为塞下长数字而换小号字——
         // 空间从标注内容里省（见 Compact），不从字号里省。
-        private static readonly Font font = new Font("Consolas", 11f, FontStyle.Bold, GraphicsUnit.Pixel);
+        // 字号按像素给、由 VisualCore 的字号表统一管，--layoutcheck 会断言它不低于下限。
+        private static readonly Font font = VisualFonts.DigitFont(13f);
         // 等宽字体的字符宽度：两次度量之差（.NET Framework 的度量带一段与字数无关的余量）
         private static readonly int CharWidth = MeasureCharWidth();
 
@@ -1264,7 +1265,9 @@ namespace SearchDemo
                 }
             }
 
-            // 形状线索：待访问一个小点、已访问一个叉、当前展开加粗边框、起点三角、终点圆。
+            // 状态只用填充色区分（作者 2026-10-02 的决定）：不加叉、角点、三角、圆、
+            // 加粗边框、斜线纹理这类线索。色表里每个条目的 Cue 都是 CueKind.None，
+            // 因此下面这段循环实际不画任何东西；线索机制留在核心里备用，本演示不用。
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -1351,11 +1354,16 @@ namespace SearchDemo
                 }
             }
             writer.WriteLine("  note 字符宽度 = " + advance + " 像素（等宽字体，两次度量之差）");
+            writer.WriteLine(VisualFonts.Line("格上数字", font, "，写在格子中央（格子 " + cell + " 像素）"));
+            bool fontOk = SelfTestHost.Check(writer, "min_digit_font_at_least_"
+                + VisualFonts.MinimumDigitPx.ToString("0.#", CultureInfo.InvariantCulture),
+                VisualFonts.DigitOk(font),
+                "本演示的最小数字字号 " + font.Size.ToString("0.#", CultureInfo.InvariantCulture) + " 像素（格上数字）");
             writer.WriteLine("  note 格上标注：格子 " + cell + " 像素，字体 " + font.Name + " "
                              + font.Size.ToString("0.#", CultureInfo.InvariantCulture) + " "
                              + font.Unit + "（行高 " + font.Height + "），最宽的一处 [" + worstText + "] 需 " + worst
                              + " 像素，放不下的格子数 " + over);
-            return over;
+            return over + (fontOk ? 0 : 1);
         }
 
         /// <summary>路径点在画布上的坐标。</summary>
@@ -1684,8 +1692,11 @@ namespace SearchDemo
     // ───────────────────────────────────────────────────────────── 演示定义
 
     /// <summary>搜索演示：下拉里的名字、引擎与场景的工厂、状态文案、自测。</summary>
-    internal sealed class SearchDemoApp : IVisualDemo, IPathInspector
+    internal sealed class SearchDemoApp : IVisualDemo, IPathInspector, ICellMetrics
     {
+        /// <summary>折线回放按这个格子边长算坐标，打出来的点与屏幕一致。</summary>
+        public int CellPixels { get { return Const.CellSize; } }
+
         /// <summary>把路径折线的自检转给场景：--layoutcheck 用它断言不出现斜段。</summary>
         public int CountDiagonalSegments(VisualSnapshot snapshot, int cw, int ch, List<string> report)
         {

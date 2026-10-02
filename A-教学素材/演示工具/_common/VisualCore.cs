@@ -141,6 +141,73 @@ namespace VisualCore
         public const byte Blocked = 6;    // 不可用（例如墙、空洞）
     }
 
+    // ───────────────────────────────────────────────────────────── 字号
+
+    /// <summary>
+    /// 字号纪律（作者 2026-10-02 两次提出）：演示里**最不能小的是数字**，
+    /// 「文字放得下」不等于「读得清」。字号一律按**像素**给，集中在这里：
+    /// `--layoutcheck` 会把每个演示实际用到的字号逐档打出来，并按
+    /// MinimumDigitPx 断言，**低于它即非零退出**，以后改布局会自动兜住。
+    /// 放不下时的做法是**减少同屏元素**（一屏少放几层、几格），不是把字号缩回去。
+    /// </summary>
+    public static class VisualFonts
+    {
+        /// <summary>数字字号的下限（像素）：格上标注、节点键值、下标、计数都不许低于它。</summary>
+        public const float MinimumDigitPx = 12f;
+
+        /// <summary>界面文字的字族与磅值：与系统消息框一致，8.5 磅（96 dpi 下约 11.3 像素）。</summary>
+        public const float UiPoints = 8.5f;
+
+        /// <summary>状态栏里的数字，比界面文字大一档，按像素给。</summary>
+        public const float StatusDigitPx = 12f;
+
+        /// <summary>等宽数字的字族。数字必须等宽，跳动时宽度不抖。</summary>
+        public const string DigitFamily = "Consolas";
+
+        /// <summary>
+        /// 数字字体：粗体、按像素给。粗体是画图经验里的一条——
+        /// 笔画芯部的实色像素够多，压在折线的描边上也不发糊。
+        /// </summary>
+        public static Font DigitFont(float pixels)
+        {
+            return new Font(DigitFamily, pixels, FontStyle.Bold, GraphicsUnit.Pixel);
+        }
+
+        /// <summary>界面文字（面板、图例、提示）：全框架同一个字族与磅值。</summary>
+        public static Font UiFont()
+        {
+            return new Font(SystemFonts.MessageBoxFont.FontFamily, UiPoints);
+        }
+
+        /// <summary>把一档字号写成一行，两个演示用同一种写法，便于对照。</summary>
+        public static string Line(string role, Font font, string usage)
+        {
+            return "  note 字号 " + role + "：" + font.Name + " "
+                   + font.Size.ToString("0.#", CultureInfo.InvariantCulture) + " "
+                   + (font.Unit == GraphicsUnit.Pixel ? "像素" : "磅")
+                   + "（行高 " + font.Height + " 像素）" + usage;
+        }
+
+        /// <summary>数字字号那一档是否达标：--layoutcheck 的断言用它。</summary>
+        public static bool DigitOk(Font font)
+        {
+            float pixels = font.Unit == GraphicsUnit.Pixel
+                ? font.Size
+                : font.Size * 96f / 72f;
+            return pixels >= MinimumDigitPx;
+        }
+    }
+
+    /// <summary>
+    /// 演示可以额外实现这个接口，把画布的格子边长告诉 --layoutcheck：
+    /// 折线回放时按真实格子算坐标，打出来的点才对得上屏幕。
+    /// 不实现就按 20 像素算（老演示的行为不变）。
+    /// </summary>
+    public interface ICellMetrics
+    {
+        int CellPixels { get; }
+    }
+
     // ───────────────────────────────────────────────────────────── 主题与配色
 
     /// <summary>界面上可选的三种主题设置。</summary>
@@ -1773,16 +1840,35 @@ namespace VisualCore
                                      + " attr=" + DarkTitleBar.WorkingAttribute);
                     writer.WriteLine("  dwm " + DarkTitleBar.Probe(handle));
                     Walk(form, writer, ref count, ref bad);
+                    // 「底色 + 字色」的搭配有几个不落在控件上（面板、图例、署名条），
+                    // 单列出来，README 的对比度表就能整表来自程序输出，不必手算。
+                    ThemePalette palette = ThemeManager.Palette;
+                    WritePair(writer, "面板正文/面板底", palette.PanelText, palette.PanelBackground);
+                    WritePair(writer, "次要说明/面板底", palette.MutedText, palette.PanelBackground);
+                    WritePair(writer, "图例文字/图例底", palette.PanelText, palette.Surface);
+                    WritePair(writer, "署名/署名条底", palette.PanelText, palette.Surface);
+                    // 画布上的颜色也要算：演示实现了 ICanvasPaletteCheck 就走这一支
+                    ICanvasPaletteCheck canvas = demo as ICanvasPaletteCheck;
+                    if (canvas != null) bad += canvas.CheckCanvasPalette(writer);
                     writer.WriteLine("theme=" + (ThemeManager.Current == ThemeMode.Dark ? "dark" : "light")
                                      + " checked=" + count + " low_contrast=" + bad);
                     failures += bad;
                 }
             }
             writer.WriteLine(failures == 0
-                ? "palettecheck result=PASS (全部控件的对比度都不低于 4.5:1)"
-                : "palettecheck result=FAIL (有 " + failures + " 个控件的对比度低于 4.5:1)");
+                ? "palettecheck result=PASS (控件与画布元素的对比度都不低于阈值：文字 4.5:1、图形 3:1)"
+                : "palettecheck result=FAIL (有 " + failures + " 处对比度低于阈值)");
             writer.Flush();
             return failures == 0 ? 0 : 1;
+        }
+
+        private static void WritePair(TextWriter writer, string role, Color fore, Color back)
+        {
+            double ratio = ThemeManager.ContrastRatio(fore, back);
+            writer.WriteLine("  pair " + role.PadRight(16)
+                             + " fore=" + ThemePalette.ToHex(fore)
+                             + " back=" + ThemePalette.ToHex(back)
+                             + " contrast=" + ratio.ToString("0.00", CultureInfo.InvariantCulture));
         }
 
         private static int Count(Control root)
@@ -1830,6 +1916,23 @@ namespace VisualCore
     }
 
     /// <summary>
+    /// 演示可以额外实现这个接口，让 --palettecheck 把**画布上的颜色**也算一遍。
+    ///
+    /// 控件只是外壳，画布才是演示的主体：连线压在哪几种填充色上、
+    /// 格子上的字配什么底，都得按同一套阈值判。只查控件会漏掉
+    /// 「深色下连线正好等于底色」这类问题——那种问题人眼也未必一眼看出来。
+    /// 阈值与控件一致：文字 4.5:1，图形元素（连线、边框）3:1。
+    /// </summary>
+    public interface ICanvasPaletteCheck
+    {
+        /// <summary>
+        /// 按**当前主题**逐类画布元素算对比度并打印，返回不合格的条数。
+        /// 核心在两种主题下各调用一次（调用前已经 Apply 好主题）。
+        /// </summary>
+        int CheckCanvasPalette(TextWriter writer);
+    }
+
+    /// <summary>
     /// --layoutcheck 的公共部分：把「排得对不对」变成可以机器判的几条，
     /// 不靠人看截图。要判的有：
     ///   一、路径折线每一段都是水平或垂直（不出现斜段）；
@@ -1843,6 +1946,16 @@ namespace VisualCore
         public static int Run(IVisualDemo demo, Func<Form> factory, TextWriter writer)
         {
             int failures = 0;
+            // 字号先逐档打出来：这是「先量化，再改」的那一步，改完还能复查。
+            using (Font ui = VisualFonts.UiFont())
+            using (Font status = VisualFonts.DigitFont(VisualFonts.StatusDigitPx))
+            {
+                writer.WriteLine("  note 字号下限：数字不低于 "
+                                 + VisualFonts.MinimumDigitPx.ToString("0.#", CultureInfo.InvariantCulture)
+                                 + " 像素，低于它即判失败");
+                writer.WriteLine(VisualFonts.Line("界面文字", ui, "（面板、图例、提示）"));
+                writer.WriteLine(VisualFonts.Line("状态数字", status, "（状态栏与统计）"));
+            }
             ThemeKind[] kinds = new ThemeKind[] { ThemeKind.Light, ThemeKind.Dark };
             for (int i = 0; i < kinds.Length; i++)
             {
@@ -2006,7 +2119,10 @@ namespace VisualCore
                 engine.RefreshSnapshot(snapshot);
 
                 List<string> report = new List<string>();
-                int diagonal = inspector.CountDiagonalSegments(snapshot, 20, 20, report);
+                // 折线回放按真实格子边长算坐标：演示若实现了 ICellMetrics 就问它，没实现按 20 像素。
+                ICellMetrics metrics = demo as ICellMetrics;
+                int cellPixels = metrics == null ? 20 : metrics.CellPixels;
+                int diagonal = inspector.CountDiagonalSegments(snapshot, cellPixels, cellPixels, report);
                 string label = options[k] == 0 ? "四方向" : "八方向";
                 for (int i = 0; i < report.Count; i++) writer.WriteLine("  note 折线[" + label + "] " + report[i]);
                 if (diagonal > 0)
@@ -2178,7 +2294,7 @@ namespace VisualCore
             legend.Height = legend.PreferredHeight;
             Label hint = new Label();
             hint.Text = Scene.HintText;
-            hint.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5f);
+            hint.Font = VisualFonts.UiFont();
             // 提示行接在图例下方，按图例实际高度算，图例长高了也不会被压住；
             // 高度按行数算，最后一行不会被切
             hint.Location = new Point(12, legend.Bottom + 8);
@@ -2208,7 +2324,7 @@ namespace VisualCore
             Controls.Add(signature);
             signature.BringToFront();
 
-            cellFont = new Font("Consolas", 8f, GraphicsUnit.Pixel);
+            cellFont = VisualFonts.DigitFont(VisualFonts.MinimumDigitPx);   // 外壳的默认格上字体，按字号纪律取最小数字字号
             Font uiFont = SystemFonts.MessageBoxFont;
 
             comboMode = AddComboRow("模式", 8, Demo.ModeNames, Demo.DefaultMode, uiFont);
@@ -2411,7 +2527,7 @@ namespace VisualCore
                 groupStats.Controls.Add(caption);
                 Label value = MakeLabel("-", 146, 18 + i * rowStep, 184, uiFont);
                 value.AutoEllipsis = true;          // 放不下就省略号，不硬裁
-                value.Font = new Font("Consolas", 9f);   // 等宽，数字跳动时宽度不抖
+                value.Font = VisualFonts.DigitFont(VisualFonts.StatusDigitPx);   // 等宽，数字跳动时宽度不抖
                 groupStats.Controls.Add(value);
                 statValues[i] = value;
             }
@@ -3508,7 +3624,7 @@ namespace VisualCore
             SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer
                      | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true);
             BackColor = ThemeManager.Palette.Surface;
-            font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5f);
+            font = VisualFonts.UiFont();
         }
 
         public IList<LegendEntryLayout> Entries { get { return entries; } }
@@ -3675,7 +3791,7 @@ namespace VisualCore
             label.Text = SignatureText;
             label.AutoSize = true;
             label.Location = new Point(12, 5);
-            label.Font = new Font(SystemFonts.MessageBoxFont.FontFamily, 8.5f);
+            label.Font = VisualFonts.UiFont();
             label.ForeColor = theme.PanelText;
             label.BackColor = theme.Surface;
             Controls.Add(label);
