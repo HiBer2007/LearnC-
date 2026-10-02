@@ -42,6 +42,7 @@
 | **让 CubeMX 在无界面模式下生成工程** | 第 6 节 |
 | **搬进 VS Code** | 第 7 节 |
 | **报错原文与处置** | 第 8 节 |
+| **换一块板要改什么（G431 实测）** | 第 8.10 小节 |
 | **与机制章节的对应关系** | 第 9 节 |
 
 ---
@@ -1932,6 +1933,242 @@ OpenOCD 收到了 `-c gdb`，然后看到孤立的 `port`，于是拒绝启动�
 （`'-c "gdb port 3333"'`），或者改用 `&` 直接调用并把每个参数分开写。
 **`tasks.json` 里没有这个问题**：`args` 数组的每个元素天然是一个参数，
 因此第 7.1 小节的写法是 `"-c", "gdb port 3333"` 两个元素。
+
+## 8.10 换一块板要改什么（G431 实测）
+
+第 2 节到第 8 节的板子是 STM32F103C8。把同一套流程换到一块 STM32G431 上，
+要改的东西比预想的少：启动文件与链接脚本从本机已有的那份 G431 工程里取，
+编译选项改四处，其余步骤照旧。这一小节记下那次换板的过程，以及两处「配置不等于实际」。
+
+**先看这块板是什么**：
+
+`实测数据`
+`Text`
+
+```text
+Info : CMSIS-DAP: FW Version = 1.2.0
+Info : CMSIS-DAP: Serial# = 6D656D6F7279
+Info : clock speed 2000 kHz
+Info : SWD DPIDR 0x2ba01477
+Info : [stm32g4x.cpu] Cortex-M4 r0p1 processor detected
+Info : [stm32g4x.cpu] target has 6 breakpoints, 4 watchpoints
+Info : device idcode = 0x20036468 (STM32G43/G44xx - Rev 'unknown' : 0x2003)
+Info : RDP level 0 (0xAA)
+Info : flash size = 128 KiB
+Info : flash mode : single-bank
+pc (/32): 0x080078ac
+sp (/32): 0x20008000
+```
+
+| 项目 | 值 | 依据 |
+|---|---|---|
+| 内核 | Cortex-M4 r0p1（有 FPU 与硬件除法） | OpenOCD 识别 |
+| 器件 | STM32G43/G44xx，idcode `0x20036468` | DP IDCODE |
+| flash | 128 KiB，single-bank | `flash probe 0` |
+| RAM | 32 KiB（SP = `0x20008000`） | `reg sp` |
+| 读保护 | RDP level 0（`0xAA`），可自由烧写 | DP 读出 |
+| 调试器 | CMSIS-DAP，SWD 2 MHz | OpenOCD 输出 |
+
+flash 驱动识别成 `stm32l4x` 不是配错了：G4 与 L4 共用 flash 控制器，
+OpenOCD 里就是这个驱动。
+
+**要改的四处**：
+
+| 项目 | F103 上的写法 | G431 上的写法 |
+|---|---|---|
+| 启动文件与链接脚本 | 素材里的 F103 版本（第 2.3 小节） | 从本机已有的 G431 工程里原样复制 `startup_stm32g431xx.s` 与 `STM32G431XX_FLASH.ld`（案例来源：`K:\Hardware\信息显示驱动-G431\`） |
+| 内核与浮点 | `-mcpu=cortex-m3 -mthumb` | `-mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard` |
+| 运行库 | `--specs=nosys.specs` 的空桩 | `--specs=rdimon.specs`，semihosting 由它提供（第 8.4 小节） |
+| 目标配置 | `target/stm32f1x.cfg` | `target/stm32g4x.cfg` |
+
+链接脚本里写的是 **128K flash 与 32K RAM**，与上面读出来的实测值一致，
+因此这两个文件可以原样使用。
+
+`Makefile`
+
+```make
+# Makefile   G431 侧的关键选项（节选）
+CC      := arm-none-eabi-gcc
+CPU     := -mcpu=cortex-m4 -mthumb
+CFLAGS  := $(CPU) -O2 -Wall -Wextra -ffunction-sections -fdata-sections
+LDFLAGS := $(CPU) -T STM32G431XX_FLASH.ld -Wl,--gc-sections --specs=rdimon.specs
+
+g431_hard.elf: main.c startup_stm32g431xx.s
+	$(CC) $(CFLAGS) -mfpu=fpv4-sp-d16 -mfloat-abi=hard $(LDFLAGS) $^ -o $@
+```
+
+烧写与第 4 节是同一套命令，只换目标配置：
+
+`Bash`
+
+```bash
+openocd -f interface/cmsis-dap.cfg -f target/stm32g4x.cfg \
+  -c "init" -c "reset halt" \
+  -c "flash write_image erase <纯 ASCII 路径>/g431_hard.elf" \
+  -c "verify_image <纯 ASCII 路径>/g431_hard.elf" \
+  -c "arm semihosting enable" \
+  -c "reset run" -c "sleep 3000" -c "halt" -c "shutdown"
+```
+
+`实测数据`
+`Text`
+
+```text
+wrote 32736 bytes from file .../g431_hard.elf in 1.246965s (25.637 KiB/s)
+verified 32732 bytes in 0.321009s (99.576 KiB/s)
+semihosting is enabled
+g431 bringup ok
+```
+
+产物先复制到纯 ASCII 路径再烧，理由见第 8.7 小节。
+
+**第一处「配置不等于实际」**：工程里的 `.ioc` 勾的是 HSE 8 MHz
+（`RCC.HSE_VALUE=8000000`，PF0 与 PF1 配成 `HSE-External-Oscillator`），
+但它生成的 `SystemClock_Config()` 用的是 HSI：
+
+`C`
+
+```c
+/* main.c（节选，案例来源：K:\Hardware\信息显示驱动-G431\Core\Src\main.c 第 142 至 166 行）
+   .ioc 里勾的是 HSE，生成出来的却是 HSI 加 PLL。 */
+RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
+RCC_OscInitStruct.PLL.PLLN = 18;
+RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK) { Error_Handler(); }
+```
+
+16 MHz ÷ 1 × 18 ÷ 2 = **144 MHz**，与下面实测的落地值一致。
+**`.ioc` 是配置，生成的代码才是实际**；两者不一致时，以代码与寄存器读数为准。
+
+**第二处「配置不等于实际」**：`.ioc` 里写 HSE 是 8 MHz，而这颗晶振实测是 **24.01 MHz**。
+`HSERDY` 只能证明「有晶振」，证明不了「多大」——频率要靠墙钟量，见下面那张表。
+**以实测为准**，并把 `.ioc` 的时钟页改过来。
+
+**时钟树的落地值**：
+
+`实测数据`
+`Text`
+
+```text
+PLLCFGR     = 0x01001202   （PLLSRC = HSI、PLLM 字段 0 = ÷1、PLLN = 18、PLLR 字段 0 = ÷2、PLLREN 置位）
+SWS         = 0xc          （PLL 已接管 SYSCLK）
+FLASH->ACR  = 0x00040704   （LATENCY = 4WS、PRFTEN 与 ICEN/DCEN 都开）
+PWR->CR1    = 0x00000200   （VOS = 01 = range 1）
+```
+
+`PWR_CR1_VOS_0` 不是 0 号位，它是 VOS 字段的 01 取值（`0x200`），
+在 HAL 里对应 `PWR_REGULATOR_VOLTAGE_SCALE1`，即 range 1。
+144 MHz 用 range 1 就够，超过 150 MHz 才需要 boost。
+flash 等待周期取 `FLASH_LATENCY_4`，预取与两个 cache 都打开。
+
+**周期数不随频率变**。同一段循环分别在 16 MHz 与 144 MHz 下各跑一遍
+（20,000 次迭代，`DWT->CYCCNT` 计周期，`-O2`）：
+
+`实测数据`
+
+| 每次迭代周期数 | HSI 16 MHz | PLL 144 MHz |
+|---|---:|---:|
+| `int` 加法 | 9.00 | 9.00 |
+| `int` 除法 | 14.92 | 14.92 |
+| `float` 乘加 | 11.00 | 11.00 |
+| `double` 乘加 | 166.00 | 166.01 |
+
+前三行逐位相同，这直接说明 `DWT->CYCCNT` 数的是周期、不是时间。
+最后一行差 0.01，落在 `double` 那一行本身的抖动范围内
+（同一段代码重编一次，它会在 165 与 166 之间跳 1 个周期），不是频率带来的差。
+
+**墙钟怎么测**。用固定 `-c "sleep <毫秒>"` 收尾是量不出时间的：
+墙钟会被那个固定的睡眠盖住，程序跑多久测出来都一样。
+改成让程序在结尾写一个哨兵变量，OpenOCD 一边让它跑、一边用 `mdw` 轮询：
+
+`C`
+
+```c
+/* delay.c（节选）    程序最后一行写哨兵；地址由 arm-none-eabi-nm 读出（本例为 0x20000a90） */
+volatile uint32_t delay_done = 0;
+/* …工作循环… */
+delay_done = 0xDEADBEEFu;
+```
+
+`Text`
+
+```tcl
+# waitdone.cfg    等哨兵出现再收尾
+proc wait_done {} {
+    for {set n 0} {$n < 60000} {incr n} {
+        set v [lindex [mdw 0x20000a90] 1]
+        if {$v eq "deadbeef"} {
+            echo "SENTINEL-OK polls=$n"
+            return 0
+        }
+        sleep 5
+    }
+    echo "SENTINEL-TIMEOUT"
+    return 1
+}
+```
+
+`PowerShell`
+
+```powershell
+# 主机侧计时：加载 waitdone.cfg，由 wait_done 轮询哨兵
+Measure-Command {
+  & openocd -f interface/cmsis-dap.cfg -f target/stm32g4x.cfg `
+    -c "init" -c "reset halt" `
+    -c "flash write_image erase C:/g431lab/delay-hsi.elf" `
+    -c "verify_image C:/g431lab/delay-hsi.elf" `
+    -c "arm semihosting enable" `
+    -c "reset run" -f C:/g431lab/waitdone.cfg -c "wait_done" -c "halt" -c "shutdown"
+}
+```
+
+轮询本身有代价：目标在跑的时候一次 `mdw` 大约 10 ms，一次 `sleep 5` 加一次读约 15 ms，
+这就是墙钟分辨率的上限。因此**工作循环要跑得够长**，短了会被这个粒度吞掉。
+
+`实测数据`
+
+| 产物（`WORK` = 96,000,000，`cycles` ≈ 8.64 亿） | 时钟 | 墙钟（主机） | 减 baseline | 实测频率 |
+|---|---|---:|---:|---:|
+| `delay-base.elf` | HSI 16 MHz | 2.682 s | — | — |
+| `delay-base.elf`（第二次） | HSI 16 MHz | 2.618 s | — | — |
+| `delay-hsi-long.elf` | HSI 16 MHz | 56.586 s | 53.936 s | **16.02 MHz** |
+| `delay-hse-long.elf` | HSE | 38.643 s | 35.993 s | **24.01 MHz** |
+| `delay-pll144-long.elf` | PLL 144 MHz | 8.632 s | 5.982 s | **144.43 MHz** |
+
+baseline 取两次的平均 2.650 s，实测频率 = 程序打印的 `cycles` ÷（墙钟 − baseline）。
+
+**短版的数据为什么不可用**：把工作量缩到四分之一时，减掉 baseline 之后 PLL 那一行只剩 1.53 s，
+而 baseline 自己在两次运行之间就从 2.665 s 晃到 2.596 s（差 0.069 s），
+摊到 1.53 s 上就是 ±4.5%，量出来是 141.0 MHz。
+**141 不是芯片真的跑 141 MHz，是误差被放大四倍的结果**；
+长版量出的 144.43 MHz 与配置值 144 MHz 相符。
+
+**换一块板要检查的事**：
+
+| 检查项 | 为什么查它 |
+|---|---|
+| 晶振有没有、多少 MHz | 时钟树按它算，而 `.ioc` 里的值未必是板上那颗；本次实测 24.01 MHz，与 `.ioc` 写的 8 MHz 不符 |
+| 复位线是否引出 | 程序把 SWJ 关掉时，`connect_assert_srst` 要靠复位引脚在连接期间拉住复位（第 8.2 小节） |
+| 有没有读保护 | RDP 不为 0 时烧写会被拒；本次读到 RDP level 0（`0xAA`），可自由烧写 |
+| 只有一块调试器时 | 绝不加载另一块板的目标配置，理由见下 |
+
+最后一条的后果值得单独写：`target/stm32f1x.cfg` 配到 G431 上时，
+SWD 侧确实认得出 DPIDR 不同（`0x2ba01477` 对 `0x1ba01477`），
+但 flash 驱动会照着配置里写的地址与容量往下写——**镜像会被写进手里这块芯片**。
+这台调试器读不出 USB 序列号
+（`could not read serial number for device 0x0416:0x5021: Entity not found`），
+`adapter serial` 那条路走不通，两块板又不可能同时接上，
+因此**一次只操作一块板、换板靠人工换插**是这里的操作规程。
+
+> [!NOTE]
+> 换板要改的是四件事：启动文件与链接脚本、`-mcpu` 与浮点选项、运行库的 `--specs`、目标配置。
+> 这一次真正花时间的不在这四件里，而在两处「配置不等于实际」：
+> `.ioc` 写的时钟源与生成的代码不一致，`.ioc` 写的晶振频率与板上的实物不一致。
+> 两者都只能靠读寄存器与量墙钟来定，拿到新板先做这两步。
 
 ---
 
