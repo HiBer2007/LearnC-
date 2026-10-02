@@ -9,13 +9,13 @@
 地址由起始地址加上 `i` 乘元素大小就能算出来；一整块内存连着读，
 硬件一次读取能把后面若干个元素一起带进缓存，遍历因此比任何指针结构都快。
 
-语言给的第一个连续存储是 C 数组，它有两个缺陷。
+语言给的第一个连续存储是 C 数组，它有两处不合适。
 第一个是**一传参就退化成指针**：函数收到的是地址，元素个数当场丢失，
 `sizeof` 从「整块的大小」变成「一个指针的大小」。
 第二个是**它不是一个值**：不能整体赋值、不能整体比较、不能当返回值，
 只能一个元素一个元素地搬。`std::array` 把 C 数组包成一个真正的类型，
 上面那些操作全都能做，而且**一个字节都不多花**。
-C 数组还有一个更硬的限制：**长度在编译期就要定下来**。
+C 数组还有一条更硬的限制：**长度在编译期就要定下来**。
 运行期才知道要放多少个元素时，需要一块能自己长大的连续内存，那就是 `std::vector`。
 
 这一章把连续存储从形状讲到代价。先看地址是怎么算出来的、一块缓冲区由哪几个数描述，
@@ -56,7 +56,7 @@ C 数组还有一个更硬的限制：**长度在编译期就要定下来**。
 
 | 本章各节 | 讲什么 |
 |---|---|
-| 第 1 节 | 连续存储的形状：地址由下标算出来，一块缓冲区由哪几个数描述，它赢在哪、输在哪 |
+| 第 1 节 | 连续存储的形状：地址就是一次乘法、一块缓冲区由 `size` 与 `capacity` 两个数描述，它赢在哪、输在哪 |
 | 第 2 节 | `std::array`：C 数组的两个缺陷，包裹之后一个字节都不多花，越界时 `[]` 与 `at` 的分工 |
 | 第 3 节 | `std::vector`：容量、增长、搬迁、`reserve`、移动还是拷贝、插入删除、失效规则 |
 | 第 4 节 | 代价：每元素空间、分配次数、边界检查、缓存收益、`vector<bool>` 的特化 |
@@ -65,6 +65,12 @@ C 数组还有一个更硬的限制：**长度在编译期就要定下来**。
 ---
 
 # 第 1 节 连续存储的形状
+
+需求写清楚是这样：放下一批同类型的元素，个数在运行期才知道；
+放好之后，最多的动作是按下标随机取第 `i` 个与从头到尾走一遍，
+其次是往末尾追加，在中间插入删除很少发生。
+这份需求逼出来的形状只有一种：所有元素挤在一整块内存里，
+再配上一对计数记着用了多少、能放多少。
 
 ## 1.1 地址就是一次乘法
 
@@ -117,8 +123,9 @@ int main() {
 ```text
 array_shape.cpp:8:79: warning: 'sizeof' on array function parameter 'a' will return size of 'int*' [-Wsizeof-array-argument]
 array_shape.cpp:7:29: note: declared here
-（为省篇幅，省略了编译器附在两条诊断下面的源码摘录）
 ```
+
+编译器附在两条诊断下面的源码摘录已省略。
 
 `实测数据`
 `Text`
@@ -382,8 +389,22 @@ int main() {
 
 **四百万字节的 C 数组与四百万字节的 `std::array` 大小完全相同，
 遍历一百万次的耗时也在同一档（这一次三者都是 0.0940 ms）。**
-包一层不花钱，这在 C++ 里不是特例，而是标准对有零开销意图的设施的一贯要求：
-`std::array` 不许多占一个字节的空间，也不许让访问变慢。
+包一层不花钱，这一点是能查到的：`std::array` 里只有一个 `T[N]` 成员，
+标准要求它满足聚合体的条件，实现没有地方再塞进一个计数或指针。
+
+`文档`
+
+> "The header `<array>` defines a class template for storing fixed-size sequences
+> of objects. An `array` is a contiguous container (26.2.1). An instance of
+> `array<T, N>` stores `N` elements of type `T`, so that `size() == N` is an invariant."
+> "An `array` is an aggregate (11.6.1) that can be list-initialized with up to `N`
+> elements whose types are convertible to `T`."
+>
+> —— N4659 §26.3.7.1/1、§26.3.7.1/2
+
+**标准里并没有「不许多占一个字节」「不许变慢」这样的句子**——
+它管的是语义（是聚合体、是连续容器），「不多花」是这两条要求加上实现的结果，
+证据是上面那两行 4000000 与 4000000。
 
 > [!TIP]
 > **想同时拿到「`std::array` 的接口」与「C 数组的布局」时，直接用它。**
@@ -412,8 +433,9 @@ int main() {
 > 后一种最危险，因为它把 bug 藏起来了（越界的几种结局见《04-语法/08-数组、指针与引用.md》第 5.1 节）。
 
 那么 `at` 的检查要花多少钱？第 3.5 小节的程序里有一项对照：
-随机访问一百万个元素，`operator[]` 用了 0.502 ms，`at` 用了 0.584 ms，
-两者在同一量级——在 `-O2` 下这台机器上测不出这次检查的代价。
+随机访问一百万个元素，`operator[]` 用了 0.502 ms，`at` 用了 0.584 ms。
+两者在同一量级，而且方向不稳定——同一份程序重跑会得到 `operator[]` 0.880 ms、
+`at` 0.623 ms，`at` 反而更快（见第 4.3 小节）。
 **要不要用 `at`，取决于「越界后继续跑」的风险有多大，而不是这点开销。**
 数据来自外部输入、下标由计算得出时，用 `at` 换一个能抓住的异常通常更划算。
 
@@ -545,11 +567,12 @@ int main() {
 }
 ```
 
+GCC 15.2.0（libstdc++），`g++ -std=c++17 -O2`：
+
 `实测数据`
 `Text`
 
 ```text
-== GCC 15.2.0（libstdc++），g++ -std=c++17 -O2 ==
 size -> capacity（前 10 次增长）
          1 ->        1   倍数 0.000
          2 ->        2   倍数 2.000
@@ -564,11 +587,12 @@ size -> capacity（前 10 次增长）
 扩容次数 25，搬迁元素总数 16777215，最终 capacity 16777216，空槽比例 40.4%，sizeof(vector<int>) 24
 ```
 
+MSVC 19.44（Microsoft STL），`cl /utf-8 /std:c++17 /O2`：
+
 `实测数据`
 `Text`
 
 ```text
-== MSVC 19.44（Microsoft STL），cl /utf-8 /std:c++17 /O2 ==
 size -> capacity（前 10 次增长）
          1 ->        1   倍数 0.000
          2 ->        2   倍数 2.000
@@ -798,7 +822,11 @@ int main() {
 > 要放的元素个数已知（读文件前先数行数、协议里带长度字段）；
 > 元素本身很大或拷贝很贵（`Tracked` 这种）；
 > 在性能敏感的循环里反复 `push_back`，而循环外面就能估出上界。
-> **估错了也不要紧**：估少了只是多扩容一次，估多了浪费一些内存。
+> **估错的两边后果都要算，不是「不要紧」**：估少了，元素超过估的容量时照样扩容，
+> 而扩容会让已经发出去的指针、引用、迭代器全部失效——边遍历边插入时这是 bug，
+> 不是慢一点；估多了，多要的那块内存会一直占到 `shrink_to_fit` 或容器析构为止，
+> 一千万个 `int` 估成两千万就白占 40 MB。
+> 用法因此是**按上界估、估完别再塞超过它的元素**；估不准时反而宁可让它自己长。
 
 > [!CAUTION]
 > **`reserve` 之后不要用旧的下标或迭代器去写。**
@@ -810,7 +838,8 @@ int main() {
 
 扩容要「把已有元素搬到新缓冲区」。搬有两种做法：拷贝构造（原对象留着，按内容再造一份）
 与移动构造（把资源直接接过来，原对象随即销毁）。
-移动显然更快，但有一个条件：**移动过程不能抛异常。**
+移动通常更便宜——它把资源直接接过来，不必按内容再造一份——
+但要满足一个条件：**移动过程不能抛异常。**
 
 `C++`
 
@@ -1096,10 +1125,14 @@ int main() {
   unordered_map<int,int>       43.26 字节/元素（分配 100014 次，共 4326480 字节）
 ```
 
-**一个 `int` 是 4 字节，`vector` 每元素就摊到 4.00 字节——没有一分钱的管理开销。**
+**一个 `int` 是 4 字节，`vector` 每元素就摊到 4.00 字节——所有字节都用在元素上。**
 链式存储每元素要 24 字节（多出两个指针与对齐填充），
 比数据本身多付了五倍。这张表还说明了另一件事：
-**「不 `reserve`」的那一行是 10.49 字节**，多出来的 6.49 字节全是扩容留下的空槽与旧块。
+**「不 `reserve`」的那一行是 10.49 字节**——这一列数的是**累计分配**：
+扩容过程中一共向堆要过 1048572 字节，其中 524288 字节是最后留在手里的缓冲区，
+另外 524284 字节在每次扩容后就还给了堆。
+**留在手里的是 5.24 字节/元素**：4 字节是数据，1.24 字节是 131072 个容量位里的空槽。
+「累计分配」比「最终占用」大得多，这是扩容式增长的固有形状，不是泄漏。
 
 ## 4.2 分配次数：比字节数更值钱
 
@@ -1131,7 +1164,8 @@ int main() {
 `operator[]` 用了 **0.502 ms**，`at` 用了 **0.584 ms**。
 
 **两者在同一量级。** `at` 多做的是一次比较与一个不太可能跳转的分支，
-在 `-O2` 下这台机器上只测到十几个百分点的差别，而同样一批数据重跑时这个差别还会变号。
+在 `-O2` 下这台机器上只测到十几个百分点的差别，而且这个差别会变号：
+同一份程序重跑，`operator[]` 0.880 ms、`at` 0.623 ms，`at` 反而更快。
 要不要用 `at` 的判断标准因此不是性能，而是「越界了以后怎么办」——见第 2.4 小节。
 
 ## 4.4 缓存带来的优势
@@ -1233,10 +1267,12 @@ forward_list   10 轮求和    45.83 ms  （acc=10000000）
 
 ```cpp
 /* vector_bool.cpp    编译：g++ -std=c++17 -O2 vector_bool.cpp -o vector_bool
- * vector<bool> 的位压缩：直接用堆分配的字节数对照 vector<char> */
+ * vector<bool> 的位压缩：直接用堆分配的字节数对照 vector<char>；
+ * 末尾用 static_assert 真去问编译器「vb[0] 到底是不是 bool&」 */
 #include <cstdio>
 #include <cstdlib>
 #include <new>
+#include <type_traits>
 #include <vector>
 
 static long long g_calls = 0;
@@ -1282,9 +1318,20 @@ int main() {
     std::printf("sizeof(vector<char>)  = %zu\n", sizeof(std::vector<char>));
 
     std::vector<bool> vb(10, false);
+
+    // 这几条不是写在正文里的一句话，而是让编译器当场判定
+    static_assert(std::is_same<decltype(vb[0]), std::vector<bool>::reference>::value,
+                  "vb[0] 的类型是代理类 reference");
+    static_assert(!std::is_lvalue_reference<decltype(vb[0])>::value,
+                  "vb[0] 不是左值引用：&vb[0] 取不到地址");
+    static_assert(!std::is_same<decltype(vb[0]), bool&>::value,
+                  "vb[0] 不是 bool&");
+
     auto proxy = vb[3];                             // 代理对象，不是 bool&
     proxy = true;
-    std::printf("vector<bool> 没有 data()；&vb[0] 的类型是 vector<bool>::reference*\n");
+    std::printf("vb[0] 是 bool& 吗：%d；vb[0] 是左值引用吗：%d\n",
+                static_cast<int>(std::is_same<decltype(vb[0]), bool&>::value),
+                static_cast<int>(std::is_lvalue_reference<decltype(vb[0])>::value));
     std::printf("通过代理写入后 vb[3]=%d\n", static_cast<int>(vb[3]));
     return 0;
 }
@@ -1299,19 +1346,29 @@ vector<char>  一亿个：堆分配 1 次、共 100000000 字节 = 95.4 MB，cap
 
 sizeof(vector<bool>)  = 40
 sizeof(vector<char>)  = 24
-vector<bool> 没有 data()；&vb[0] 的类型是 vector<bool>::reference*
+vb[0] 是 bool& 吗：0；vb[0] 是左值引用吗：0
 通过代理写入后 vb[3]=1
 ```
 
 **一亿个布尔值，8 倍差距**：12.5 MB 对 95.4 MB。省下来的空间是实打实的，
 代价写在最后三行里：
 
-- `vector<bool>` **没有 `data()`**，因此不能用 `memcpy` 之类的接口；
-- `vb[0]` 不是 `bool&`，而是一个**代理对象**：它记录「哪一位」，
-  赋值时去改那一位。因此 `auto& r = vb[0];` 编译不过，
-  `bool* p = &vb[0];` 也编译不过；
-- 代理对象与迭代器都不是真正的引用，**标准库的很多算法用不了**，
-  这也正是「`vector<bool>` 是不是容器」在委员会里争论多年的原因。
+- **没有 `data()`**：标准的 `vector<bool>` 清单里根本没有这个成员，
+  因此不能用 `memcpy` 之类的接口把内容整块取走；
+- `vb[0]` 不是 `bool&`，而是一个**按值返回的代理对象**（`vector<bool>::reference`）：
+  它记录「哪一位」，赋值时去改那一位。程序里用 `static_assert` 问过编译器，
+  这三条都成立：类型是 `reference`、不是左值引用、也不是 `bool&`。
+  因此 `auto& r = vb[0];` 与 `bool* p = &vb[0];` 都编译不过——
+  后者连 `&vb[0]` 这一步都过不去，`g++` 报的是 `taking address of rvalue`；
+- 凡是要求「元素是真正的 `bool&`」或者「元素能取地址」的代码，
+  都不能用在它上面；模板里一旦依赖这两条，就会在编译期炸开。
+
+`文档`
+
+> "To optimize space allocation, a specialization of `vector` for `bool` elements
+> is provided:"
+>
+> —— N4659 §26.3.12/1
 
 > [!WARNING]
 > **不要用 `vector<bool>` 当「位数组」以外的用途。**
