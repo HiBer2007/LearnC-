@@ -643,8 +643,6 @@ int main() {
 `Text`
 
 ```text
-splice 接 1 个元素：      0.000000 ms（a=2 b=0）
-splice 接 10 万个元素：   0.000000 ms（a=100001 b=0）
 insert 复制 10 万个元素： 3.076 ms（a=100001 b=100000）
 splice 前 b 首元素在 000002ec907c2c00，splice 后它还在 000002ec907c2c00，地址没变=1
 ```
