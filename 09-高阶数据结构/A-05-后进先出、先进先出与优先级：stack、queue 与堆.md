@@ -21,7 +21,7 @@
 也是一棵近似完全的二叉树）、以及「只维持最值」这条思路换来的实际代价——
 本章实测里，同一份「全部插入再全部取出」的任务，
 用 `priority_queue` 是 8.916 ms（同一份数据改用 `make_heap` 加逐个 `pop_heap` 手走一遍是 7.471 ms），
-用每次都维持有序的数组是 529.463 ms。
+用每次都维持有序的数组是 470.129 ms。
 
 ---
 
@@ -208,11 +208,11 @@ int main() {
         sink += acc;
     });
 
-    std::printf("  stack  底层 deque   %10.3f\n", s_deque);
-    std::printf("  stack  底层 vector  %10.3f\n", s_vector);
-    std::printf("  stack  底层 list    %10.3f\n", s_list);
-    std::printf("  queue  底层 deque   %10.3f\n", q_deque);
-    std::printf("  queue  底层 list    %10.3f\n", q_list);
+    std::printf("  stack  底层 deque   %10.3f ms\n", s_deque);
+    std::printf("  stack  底层 vector  %10.3f ms\n", s_vector);
+    std::printf("  stack  底层 list    %10.3f ms\n", s_list);
+    std::printf("  queue  底层 deque   %10.3f ms\n", q_deque);
+    std::printf("  queue  底层 list    %10.3f ms\n", q_list);
 
     // 适配器的接口只用到底层容器的几个操作，这段模板对任何满足要求的容器都能编译
     std::printf("\n== 同一段模板代码换底层容器 ==\n");
@@ -240,11 +240,11 @@ int main() {
   queue<int, list<int>>               24 字节
 
 == 压入并弹出 1000000 个 int（单位：毫秒）==
-  stack  底层 deque        3.850
-  stack  底层 vector       2.448
-  stack  底层 list        58.918
-  queue  底层 deque        7.047
-  queue  底层 list        56.561
+  stack  底层 deque        2.954 ms
+  stack  底层 vector       1.809 ms
+  stack  底层 list        43.087 ms
+  queue  底层 deque        2.839 ms
+  queue  底层 list        41.687 ms
 
 == 同一段模板代码换底层容器 ==
   vector 底层 top=2，deque 底层 top=2
@@ -253,11 +253,11 @@ int main() {
 
 | 底层容器 | `stack` | `queue` | 原因 |
 |---|---|---|---|
-| `deque`（默认） | 3.850 | 7.047 | 分段连续，两端都是 `O(1)` |
+| `deque`（默认） | 2.954 | 2.839 | 分段连续，两端都是 `O(1)` |
 | `vector` | **2.448** | 用不了 | 尾插尾删最快，但没有头删 |
 | `list` | 58.918 | 56.561 | 每元素一次堆分配，这条老账在这里最贵 |
 
-**`stack` 用 `vector` 是最快的**（2.448 对 3.850），因为它的进出都在同一端，
+**`stack` 用 `vector` 是最快的**（1.809 对 2.954），因为它的进出都在同一端，
 而 `vector` 在尾部的追加与删除没有分段管理的开销。
 **`queue` 只能用 `deque` 或 `list`**，而 `deque` 比 `list` 快一个数量级（表里这一次是 8 倍，重跑时到过 14 倍）——
 原因与前一章讲过的完全一样：链表每放一个元素就要一次堆分配。
@@ -274,7 +274,7 @@ int main() {
 `C++`
 
 ```cpp
-/* err_queue_vector.cpp   queue 不能用 vector 作底层容器：pop 需要 pop_front */
+/* err_queue_vector.cpp   queue 不能用 vector 作底层容器：pop 需要 pop_front（故意编不过）*/
 #include <queue>
 #include <vector>
 int main() {
@@ -289,14 +289,15 @@ int main() {
 `Text`
 
 ```text
-<MinGW>/include/c++/bits/stl_queue.h: In instantiation of 'void std::queue<_Tp, _Sequence>::pop()
-  [with _Tp = int; _Sequence = std::vector<int>]':
 <源文件>:7:10:   required from here
-<MinGW>/include/c++/bits/stl_queue.h:360:11: error: 'class std::vector<int>' has no member named 'pop_front'
+    7 |     q.pop();
+      |     ~~~~~^~
   360 |         c.pop_front();
       |         ~~^~~~~~~~~
-（省略了包含链的前几行；编译器打印的路径已换成占位符）
 ```
+
+被省略的是包含链与两行报错主体：`In instantiation of 'void std::queue<_Tp, _Sequence>::pop() [with _Tp = int; _Sequence = std::vector<int>]'`
+与 `<INCLUDE>/bits/stl_queue.h:360:11: error: 'class std::vector<int>' has no member named 'pop_front'`。
 
 **报错发生在 `q.pop()` 这一行，而不是声明容器那一行。** 原因是模板成员按需实例化：
 `std::queue<int, std::vector<int>>` 这个类型本身没有错，
@@ -339,19 +340,16 @@ int main() {
 | 对象自身大小 | 80 字节（段表与两个迭代器） | 24 字节（三个指针） |
 
 `实测数据`
-`Text`
 
-```text
-== 在头部插入 n 个元素，单位：毫秒 ==
-         n       vector        deque         list vector+reverse
-   1000000    34742.979        1.949       41.435        1.957
+| 在头部插入的元素个数 | `vector` | `deque` | `list` | `vector` + 翻转 |
+|---|---|---|---|---|
+| 1000000 | 34742.979 ms | 1.949 ms | 41.435 ms | 1.957 ms |
 
-== 在中间（1/2 处）插入 n 个元素，单位：毫秒 ==
-         n       vector        deque         list
-    100000    111.584      372.268        3.828
+| 在中间（1/2 处）插入的元素个数 | `vector` | `deque` | `list` |
+|---|---|---|---|
+| 100000 | 111.584 ms | 372.268 ms | 3.828 ms |
 
-  sizeof(deque<int>) = 80
-```
+`deque<int>` 的对象自身大小是 80 字节，`sizeof(vector<int>)` 是 24 字节。
 
 （程序与完整输出见《09-高阶数据结构/A-02-链式存储：list 与 forward_list.md》第 5 节。）
 
@@ -801,10 +799,10 @@ int main() {
     });
 
     std::printf("N=%d 个随机数，全部插入后再全部取出（单位：毫秒）\n", N);
-    std::printf("  %-34s %10.3f\n", "有序数组（每次插入都搬移）", t_sorted_arr);
-    std::printf("  %-34s %10.3f\n", "堆（priority_queue）", t_heap);
-    std::printf("  %-34s %10.3f\n", "堆（make_heap + 逐个 pop_heap）", t_heap_manual);
-    std::printf("  %-34s %10.3f\n", "先全部收齐再 sort 一次", t_batch);
+    std::printf("  %-34s %10.3f ms\n", "有序数组（每次插入都搬移）", t_sorted_arr);
+    std::printf("  %-34s %10.3f ms\n", "堆（priority_queue）", t_heap);
+    std::printf("  %-34s %10.3f ms\n", "堆（make_heap + 逐个 pop_heap）", t_heap_manual);
+    std::printf("  %-34s %10.3f ms\n", "先全部收齐再 sort 一次", t_batch);
     std::printf("  （sink=%lld）\n", static_cast<long long>(sink));
     return 0;
 }
@@ -815,16 +813,16 @@ int main() {
 
 ```text
 N=200000 个随机数，全部插入后再全部取出（单位：毫秒）
-  有序数组（每次插入都搬移）    529.463
-  堆（priority_queue）                 8.916
-  堆（make_heap + 逐个 pop_heap）      7.471
-  先全部收齐再 sort 一次          8.453
+  有序数组（每次插入都搬移）    470.129 ms
+  堆（priority_queue）                 8.704 ms
+  堆（make_heap + 逐个 pop_heap）      8.211 ms
+  先全部收齐再 sort 一次          8.366 ms
   （sink=400511087216）
 ```
 
 | 做法 | 每次插入的代价 | 总代价 | 实测 |
 |---|---|---|---|
-| 有序数组 | `O(n)` 搬移 | `O(n²)` | 529.463 ms |
+| 有序数组 | `O(n)` 搬移 | `O(n²)` | 470.129 ms |
 | 堆 | `O(log n)` 上浮 | `O(n log n)` | **8.916 ms** |
 | 堆（手动） | 同上 | `O(n log n)` | 7.471 ms |
 | 先收齐再排序 | —— | `O(n log n)` | 8.453 ms |
@@ -843,15 +841,15 @@ N=200000 个随机数，全部插入后再全部取出（单位：毫秒）
 
 ```text
 == 压入并弹出 1000000 个 int（单位：毫秒）==
-  stack  底层 deque        3.850
-  stack  底层 vector       2.448
-  stack  底层 list        58.918
-  queue  底层 deque        7.047
-  queue  底层 list        56.561
+  stack  底层 deque        2.954 ms
+  stack  底层 vector       1.809 ms
+  stack  底层 list        43.087 ms
+  queue  底层 deque        2.839 ms
+  queue  底层 list        41.687 ms
 ```
 
-一百万个 `int` 压入再弹出：`stack` 用 `vector` 只要 2.448 ms，
-用 `list` 要 58.918 ms，**相差 16 到 24 倍**（表里这一次是 24 倍，重跑时是 16 倍）。
+一百万个 `int` 压入再弹出：`stack` 用 `vector` 只要 1.809 ms，
+用 `list` 要 43.087 ms，**相差约 24 倍**；换回默认的 `deque` 是 2.954 ms，`list` 比它慢约 15 倍。
 适配器没有任何自己的开销，这个倍数就是底层容器的倍数——
 《09-高阶数据结构/A-02-链式存储：list 与 forward_list.md》第 5.3 小节讲过的那笔账（每元素一次堆分配）在这里原样重现。
 
