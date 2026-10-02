@@ -1356,8 +1356,8 @@ int main(void) {
     double w1 = wall_now();
     double cpu = (double)(c1 - c0) / CLOCKS_PER_SEC;
     printf("这段代码：睡 500 ms，再跑一段纯计算\n");
-    printf("clock()  量到 = %7.3f 秒\n", cpu);
-    printf("墙上时钟 量到 = %7.3f 秒\n", w1 - w0);
+    printf("clock()  测到 = %7.3f 秒\n", cpu);
+    printf("墙上时钟 测到 = %7.3f 秒\n", w1 - w0);
     printf("两者相差      = %7.3f 秒\n", (w1 - w0) - cpu);
     printf("CLOCKS_PER_SEC = %ld\n", (long)CLOCKS_PER_SEC);
     printf("x = %g\n", x);
@@ -1371,15 +1371,15 @@ int main(void) {
 ```text
 （Windows / MinGW-w64 15.2.0，连跑两次）
 这段代码：睡 500 ms，再跑一段纯计算
-clock()  量到 =   0.598 秒
-墙上时钟 量到 =   0.598 秒
+clock()  测到 =   0.598 秒
+墙上时钟 测到 =   0.598 秒
 两者相差      =  -0.000 秒
 CLOCKS_PER_SEC = 1000
 x = 9e+14
 
 第二次：
-clock()  量到 =   0.606 秒
-墙上时钟 量到 =   0.606 秒
+clock()  测到 =   0.606 秒
+墙上时钟 测到 =   0.606 秒
 两者相差      =   0.000 秒
 ```
 

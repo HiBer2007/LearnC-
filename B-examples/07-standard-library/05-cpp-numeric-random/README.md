@@ -320,7 +320,7 @@ pwsh -File <工作区>\工具\GUI冒烟\GUI冒烟.ps1 `
 | `stats_demo.cpp` 的 `compute_stats` | `accumulate` 的初值写 `0LL`，避免按 `int` 累加溢出；`inner_product` 拿自己与自己内积就是平方和 |
 | `stats_demo.cpp` 的方差计算 | 用「平方和 / n − 均值²」而不是两遍扫描，浮点舍入可能把它压成负数，因此有一句下限归零 |
 | `stats_demo.cpp` 的 `make_histogram` | 箱数由最小值与最大值决定，末箱可能超出最大值；相邻箱满足 `high + 1 == next.low` |
-| `stats_demo.cpp` 的 `compare_with_rand` | 低位周期按 2 的幂逐级试探；折叠偏差用 20000 这个非整数倍模数，才量得出来 |
+| `stats_demo.cpp` 的 `compare_with_rand` | 低位周期按 2 的幂逐级试探；折叠偏差用 20000 这个非整数倍模数，才测得出来 |
 | `stats_demo.cpp` 的 `run_self_tests` | 16 项全部在这里，界面只负责把结果摆出来 |
 | `main_gui_win32.cpp` 的 `to_wide` | `core` 给的窄字符串是 GBK，按 `CP_ACP` 转宽，界面上的中文才不乱码 |
 | `main_gui_win32.cpp` 的 `paint_chart` | 纯 GDI：底色、边框、`FillRect` 画柱子、横轴刻度与纵轴峰值都是 `TextOutW` |

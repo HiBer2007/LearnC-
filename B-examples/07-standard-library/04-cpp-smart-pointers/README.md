@@ -225,7 +225,7 @@ cmake --build build/mingw
 | `resource_registry.hpp` 的 `Resource` | 拷贝构造与拷贝赋值被 `= delete` 掉，身份由地址决定；析构函数是 `virtual`，经基类指针删除派生对象才安全 |
 | `resource_registry.hpp` 的 `live_count()` | 静态计数器，构造加一、析构减一；「有没有释放」由此变成可断言的数字 |
 | `resource_registry.cpp` 的 `make_resource` | 内部用 `std::make_unique` 造派生对象，返回类型是 `unique_ptr<Resource>`，未知种类给空指针 |
-| `resource_registry.cpp` 的 `strong_cycle_live_after_scope` | 父子各持对方的 `shared_ptr`，离开作用域后计数各剩 1；量完用 `weak_ptr` 找到节点并清掉一条强引用，不把对象留给进程 |
+| `resource_registry.cpp` 的 `strong_cycle_live_after_scope` | 父子各持对方的 `shared_ptr`，离开作用域后计数各剩 1；测完用 `weak_ptr` 找到节点并清掉一条强引用，不把对象留给进程 |
 | `resource_registry.cpp` 的 `strong_cycle_live_after_break` | 与上一处相同的场景，区别只在测量点放在断环之后，返回 0 |
 | `resource_registry.hpp` 的 `Node` | 强、弱两种父指针并存，只为对照；真实项目里一种关系只选一种连法 |
 | `resource_registry.cpp` 的 `CallbackRegistry::add` | `map::emplace` 在名字已存在时不覆盖，重名注册直接返回 false；空回调也拒绝 |
@@ -236,7 +236,7 @@ cmake --build build/mingw
 
 ## 已知问题
 
-- 自测第 13 项会让两个节点短暂地互相持有，量完立刻在函数内部断环；不这样做，
+- 自测第 13 项会让两个节点短暂地互相持有，测完立刻在函数内部断环；不这样做，
   这两个对象会一直留到进程结束，后面的存活计数全部要按增量算
 - 对象计数来自静态变量，只在单线程下准确；多线程同时造对象会让数字对不上
 - `CallbackRegistry::trigger` 会改动调用次数，因此不是 `const` 成员函数；
