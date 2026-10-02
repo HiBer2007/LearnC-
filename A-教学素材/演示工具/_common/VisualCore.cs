@@ -231,7 +231,7 @@ namespace VisualCore
             palette.CueColor = ParseHex("#37474F");
             palette.FrameColor = ParseHex("#7C8F9E");
             palette.PathLine = ParseHex("#6A1B9A");     // 深紫：压在浅色底与浅蓝、米黄上都清楚
-            palette.PathHalo = ParseHex("#FFFFFF");     // 白描边：压在路径块与深色块上时靠它分界
+            palette.PathHalo = ParseHex("#C0C0C0");     // 中灰描边：压在路径块、墙、起止这些深色块上时靠它分界
             palette.Set(ThemeSlot.Empty, "#FFFFFF", "#1A1A1A");
             palette.Set(ThemeSlot.Terrain, "#F2E3C0", "#1A1A1A");
             palette.Set(ThemeSlot.Blocked, "#2E3B45", "#FFFFFF");
@@ -259,7 +259,9 @@ namespace VisualCore
             palette.GridLine = ParseHex("#3C3C3C");
             palette.CueColor = ParseHex("#E8E8E8");
             palette.FrameColor = ParseHex("#9BB0C0");
-            palette.PathLine = ParseHex("#E1BEE7");     // 浅紫：压在深色底上清楚
+            // 主色与路径块的填充色相同：压在路径块上时只剩描边那两道细边，
+            // 数字不会被一条宽带子拦腰截断；压在别的填充色上时主色自己就够醒目。
+            palette.PathLine = ParseHex("#CE93D8");
             palette.PathHalo = ParseHex("#1B1B1B");     // 深描边：压在浅紫的路径块上时靠它分界
             palette.Set(ThemeSlot.Empty, "#303030", "#F0F0F0");
             palette.Set(ThemeSlot.Terrain, "#4A3F2A", "#F0F0F0");

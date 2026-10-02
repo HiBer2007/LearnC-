@@ -1067,7 +1067,18 @@ namespace SearchDemo
         private readonly UndoStack undo = new UndoStack();
         // 格上标注统一用这一个字号，不再为塞下长数字而换小号字——
         // 空间从标注内容里省（见 Compact），不从字号里省。
-        private static readonly Font font = new Font("Consolas", 11f, GraphicsUnit.Pixel);
+        private static readonly Font font = new Font("Consolas", 11f, FontStyle.Bold, GraphicsUnit.Pixel);
+        // 等宽字体的字符宽度：两次度量之差（.NET Framework 的度量带一段与字数无关的余量）
+        private static readonly int CharWidth = MeasureCharWidth();
+
+        private static int MeasureCharWidth()
+        {
+            int one = TextRenderer.MeasureText("0", font, new Size(4000, 100),
+                                               TextFormatFlags.NoPadding).Width;
+            int two = TextRenderer.MeasureText("00", font, new Size(4000, 100),
+                                               TextFormatFlags.NoPadding).Width;
+            return two - one;
+        }
 
         private int startX = Const.StartX, startY = Const.StartY;
         private int goalX = Const.GoalX, goalY = Const.GoalY;
@@ -1236,7 +1247,20 @@ namespace SearchDemo
                         : palette.FindState(snapshot.State[index]);
                     Color color = style == null ? theme.PanelText : theme.TextOf(style.Slot);
                     // 字号只有一个，不为塞下长数字换小号字；文字已在 Compact 里压到三字符以内
-                    TextRenderer.DrawText(g, text, font, new Rectangle(x * cw, y * ch, cw, ch), color, flags);
+                    Rectangle box = new Rectangle(x * cw, y * ch, cw, ch);
+                    // 路径格上的数字被折线从格心穿过。把数字画在折线之后仍不够：
+                    // GDI 画字带抗锯齿，深色数字压在折线的深色描边上会糊成一团。
+                    // 这里在数字上下各垫一份「与路径块同色」的字，把压在字上的那两道细描边
+                    // 在字的位置断开（各让开 1 像素），数字就完整了，折线在字的两侧照常连着。
+                    if (snapshot.State[index] == ElementStates.Result)
+                    {
+                        Color pad = theme.FillOf(ThemeSlot.Result);
+                        TextRenderer.DrawText(g, text, font,
+                            new Rectangle(box.X, box.Y - 1, box.Width, box.Height), pad, flags);
+                        TextRenderer.DrawText(g, text, font,
+                            new Rectangle(box.X, box.Y + 1, box.Width, box.Height), pad, flags);
+                    }
+                    TextRenderer.DrawText(g, text, font, box, color, flags);
                 }
             }
 
@@ -1269,10 +1293,13 @@ namespace SearchDemo
             if (snapshot.PrimaryMetric < 0) return;
             List<PathSegment> segments = PathSegments(snapshot, cw, ch);
             if (segments.Count == 0) return;
-            // 两遍描：先粗一圈描边色，再压主色。折线会跨过空地、地形、已访问、墙这些
-            // 不同底色，单色做不到在每种底色上都清楚，两色一起就能保证总有一色分得开。
-            using (Pen halo = new Pen(theme.PathHalo, 4f))
-            using (Pen line = new Pen(theme.PathLine, 2.6f))
+            // 两遍描：先描边色，再压主色，总宽压在 4 像素以内
+            // （描边 3.0、主色 1.8，露出来的描边每侧不到 1 像素）。
+            // 折线会跨过空地、地形、已访问、墙这些不同底色，单色做不到在每种底色上都清楚，
+            // 两色一起就能保证总有一色与底色分得开。主色与路径块的填充色接近，
+            // 因此格上的数字压在折线上仍然读得动。
+            using (Pen halo = new Pen(theme.PathHalo, 3.0f))
+            using (Pen line = new Pen(theme.PathLine, 1.8f))
             {
                 halo.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
                 line.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
