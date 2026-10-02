@@ -1196,7 +1196,7 @@ namespace VisualCore
 
     // ───────────────────────────────────────────────────────────── 管道协议
 
-    /// <summary>两个进程之间的命令行文。一行一条，参数用空格分开。</summary>
+    /// <summary>两个进程之间的命令消息。一行一条，参数用空格分开。</summary>
     public static class PipeProtocol
     {
         public const string Init = "INIT";       // INIT 模式 选项一 选项二 种子
