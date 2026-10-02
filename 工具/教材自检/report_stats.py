@@ -107,10 +107,14 @@ def example_dirs(root: pathlib.Path, top: str) -> dict[str, int]:
 def example_dirs_at(rev: str, top: str) -> dict[str, int]:
     paths = git("-c", "core.quotepath=false", "ls-tree", "-r", "--name-only", rev, top + "/").splitlines()
     acc: dict[str, int] = {}
+    seen: set[str] = set()
     for p in paths:
         parts = p.split("/")
-        if len(parts) >= 4:
-            acc[parts[1]] = acc.get(parts[1], 0) + 1
+        if len(parts) >= 4:          # <top>/<板块>/<示例>/<文件>
+            key = parts[1] + "/" + parts[2]
+            if key not in seen:      # 同一个示例目录只算一个，别数成文件数
+                seen.add(key)
+                acc[parts[1]] = acc.get(parts[1], 0) + 1
     return acc
 
 
