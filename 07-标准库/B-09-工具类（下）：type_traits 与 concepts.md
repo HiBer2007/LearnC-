@@ -1485,7 +1485,7 @@ is_integral_v<int> = 1，integral<int> = 1（同一个判断）
 | 《04-语法/02-数据类型与类型系统.md》第 3 节 | **前置**：`const` 与 `volatile` |
 | 《07-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 3.5 小节 | 相关：`is_object_v<int&>` 为假，`optional<T&>` 因此不存在 |
 | 《07-标准库/B-08-工具类（上）：pair、tuple、optional、variant、any.md》第 5.1 小节 | 相关：`std::any` 用 `type_info` 做运行期检查 |
-| 【待补：09-高阶数据结构/】 | **后续**：容器的增长为什么要看 `is_trivially_copyable` |
+| 《09-高阶数据结构/A-01-连续存储：array 与 vector.md》第 3 节 | **后续**：容器的增长为什么要看 `is_trivially_copyable` |
 
 ---
 
