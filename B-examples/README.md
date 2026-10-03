@@ -44,9 +44,28 @@
 | [`06-lower-level/04-symbols-and-linking`](06-lower-level/04-symbols-and-linking/) | CMake 多文件（C + C++） | 命令行 | `06-更底层`：《06-更底层/06-符号与链接属性.md》第 1.2、4.2、6.1 小节 | 弱符号覆盖、静态库成员粒度与产物大小、`extern "C"` 与修饰名 |
 | [`06-lower-level/05-interrupt-and-atomic`](06-lower-level/05-interrupt-and-atomic/) | CMake 多文件（C++）+ 交叉编译 | 命令行（含 semihosting） | `06-更底层`：《06-更底层/10-中断、并发与内存序.md》第 2.1、2.2、3.4 小节 | 丢更新复现与三种修法（关中断 / 临界区 / 原子量）、真板上的中断延迟测量 |
 | [`06-lower-level/06-binary-tools`](06-lower-level/06-binary-tools/) | CMake 多文件（C） | 命令行 | `06-更底层`：《06-更底层/13-什么时候需要下到这一层.md》第 1.1、1.4 小节、《06-更底层/09-C++ 对象布局与它的硬件代价.md》第 2.1、2.4 小节 | 把 `nm` / `objdump` / `size` / `readelf` 的输出解析成结论，PE 与 ELF 两种产物都能看 |
+| [`08-algorithms/01-recursion`](08-algorithms/01-recursion/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/01-递归：把问题交给自己.md》章节 | 递归树的结构量（节点数、叶子数、树高、每层节点数）、三种错法的模拟、三种改法逐列对照 |
+| [`08-algorithms/02-memo-divide-backtrack`](08-algorithms/02-memo-divide-backtrack/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/02-记忆化、分治与回溯.md》章节 | 同一道题写三遍（朴素、记忆化、递推）、二分与三分分治的合并代价、N 皇后三种剪枝档位的搜索树规模 |
+| [`08-algorithms/03-varargs`](08-algorithms/03-varargs/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/03-不定参数：从 printf 到可变模板.md》章节 | `va_list` 的两个函数、默认实参提升的三行读数、可变参数模板与折叠表达式、`initializer_list` 的拷贝与移动计数 |
+| [`08-algorithms/04-search`](08-algorithms/04-search/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/04-查找：从线性到索引.md》章节 | 线性（含哨兵）、二分三种边界、插值查找、手写哈希索引：比较次数、探查槽数与装载因子 |
+| [`08-algorithms/05-sort-compare`](08-algorithms/05-sort-compare/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/05-排序（一）：比较排序的三种策略.md》章节 | 六种排序在四类输入形态下的比较次数、搬移次数、递归深度与稳定性 |
+| [`08-algorithms/06-sort-noncompare`](08-algorithms/06-sort-noncompare/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/06-排序（二）：不比较也能排.md》章节 | 计数、基数与桶排序的读写次数、辅助数组槽数与字节数、两处退化与稳定性对照 |
+| [`08-algorithms/07-search-space`](08-algorithms/07-search-space/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/07-搜索：在状态空间里找路.md》章节 | 六种搜索在同一张地图上的展开节点数、入队与出队次数、路径步数与代价对照 |
+| [`08-algorithms/08-graph-structure`](08-algorithms/08-graph-structure/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/08-图上的结构性问题.md》章节 | 拓扑排序、强连通分量、割点与桥、最小生成树，每类问题各配一条独立核对路子 |
+| [`08-algorithms/09-greedy-dp`](08-algorithms/09-greedy-dp/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/09-贪心与动态规划.md》章节 | 零钱兑换的贪心与 DP 对照、最长上升子序列四种实现、0/1 背包的二维表与滚动数组 |
+| [`08-algorithms/10-string-match`](08-algorithms/10-string-match/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/10-字符串匹配.md》章节 | 朴素、KMP 与 Rabin–Karp 的比较次数与碰撞次数；UTF-8 按字节与按码点两种口径 |
+| [`08-algorithms/11-scan-state-machine`](08-algorithms/11-scan-state-machine/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/11-扫描与状态机.md》章节 | 同一台剥 JSON 注释的状态机的三种写法（`switch`、二维转移表、函数指针表）输出逐位相同 |
+| [`08-algorithms/12-random-sampling`](08-algorithms/12-random-sampling/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/12-随机与采样.md》章节 | `rand() % n` 的偏差、拒绝采样、Fisher-Yates 的正误对照、蓄水池与加权抽样 |
+| [`08-algorithms/13-control`](08-algorithms/13-control/) | CMake 多文件（C++） | 命令行 | `08-一些散落的算法`：《08-一些散落的算法/13-控制：让一个量停在目标上.md》章节 | 开环漂移、开关滞回、P 的稳态误差与积分项、采样周期、抗饱和、滤波与测速、前馈与规划 |
+| [`09-data-structures/01-vector-mini`](09-data-structures/01-vector-mini/) | CMake 多文件（C++） | 命令行 | `09-高阶数据结构`：《09-高阶数据结构/B-01-手写：动态数组.md》第 1 至 8 节、《09-高阶数据结构/A-06-迭代器与范围：容器与算法之间的接口.md》第 2 节 | 三指针布局与三条不变式、四档增长倍数、搬迁时拷贝与移动的分岔、搬到一半抛异常之后的收拾 |
+| [`09-data-structures/02-list-mini`](09-data-structures/02-list-mini/) | CMake 多文件（C++） | 命令行 | `09-高阶数据结构`：《09-高阶数据结构/B-02-手写：链表.md》第 1 至 7 节、《09-高阶数据结构/A-06-迭代器与范围：容器与算法之间的接口.md》第 1.3、6.1 小节 | 两层节点与哨兵、插入删除只改指针、`splice` 的改指针次数与数元素步数分成两列、迭代器稳定 |
+| [`09-data-structures/03-hash-mini`](09-data-structures/03-hash-mini/) | CMake 多文件（C++） | 命令行 | `09-高阶数据结构`：《09-高阶数据结构/B-03-手写：哈希表.md》第 1 至 7 节、《09-高阶数据结构/A-04-按哈希定位：unordered_map.md》第 5.3 小节 | 链地址法与开放寻址共用同一套接口、桶数增长与探测步数、三档哈希函数的对照、墓碑与「清空槽就断链」 |
+| [`09-data-structures/04-rb-tree-mini`](09-data-structures/04-rb-tree-mini/) | CMake 多文件（C++） | 命令行 | `09-高阶数据结构`：《09-高阶数据结构/B-04-手写：平衡树.md》第 1 至 7 节、《09-高阶数据结构/A-07-树（一）：从搜索树到平衡.md》第 2 至 5 节 | 不变式校验器与带颜色的按层打印、插入顺序决定修复工作量、随机插删 2000 次逐步与 `std::set` 比对 |
+| [`09-data-structures/05-graph-mini`](09-data-structures/05-graph-mini/) | CMake 多文件（C++） | 命令行 | `09-高阶数据结构`：《09-高阶数据结构/B-05-手写：图与并查集.md》第 1 至 4 节、《09-高阶数据结构/A-10-图：关系怎么存.md》第 5 节 | 邻接表、位图矩阵与边表共用一套回调式遍历接口、四个模板算法在三种存法上逐位相同、同一张稀疏图的操作次数对照 |
+| [`09-data-structures/06-dsu-mini`](09-data-structures/06-dsu-mini/) | CMake 多文件（C++） | 命令行 | `09-高阶数据结构`：《09-高阶数据结构/B-05-手写：图与并查集.md》第 5 至 7 节、《09-高阶数据结构/A-12-不相交集合：只要连通性.md》第 4、5 节 | 五档并查集写出 974.89 倍差距、离线倒序删边、非根节点上的 `size_` 是陈旧值 |
 
 示例路径分两级：**第一级是板块目录**（`01-compiler`、`02-debugger`、
-`03-build-toolchain`、`04-syntax`、`05-oop`、`07-standard-library`），第二级是示例目录。
+`03-build-toolchain`、`04-syntax`、`05-oop`、`06-lower-level`、`07-standard-library`、`08-algorithms`、`09-data-structures`），第二级是示例目录。
 **板块目录一律用 ASCII 名**，因为示例工程会被构建工具读取，
 而 CMake 的 `file(STRINGS)` 与 Qt 的 `syncqt` 在非 ASCII 路径下会失败。
 
