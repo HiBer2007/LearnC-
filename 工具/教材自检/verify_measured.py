@@ -40,7 +40,16 @@
     **输出块自己写着芯片型号或内核**——不是「提到 Cortex-M 就跳过」这类宽判据；
   - **节选标注**多认两种写法（2026-10-03 加）：标注写在紧贴块上方／下方那一句正文里，
     位置在行尾（`……（下面是节选，第 1905 至 1918 行）：`）或行首（`（上面是节选，第 1807 行。）……`）。
-    判据是**那句括号注本身**，别处散文里提一句节选位置对不上，照旧不算。
+    判据是**那句括号注本身**，别处散文里提一句节选位置对不上，照旧不算；
+  - **比值算到无穷大／NaN 时怎么报**（2026-10-03 加）：一侧贴着时钟分辨率
+    （正文 `0.000 ms`、程序打出 `0.001 ms`）时比值是无穷大，**判定照旧是
+    `MISMATCH`** —— 无穷大不大于 5 倍容差，一个字都没放宽，也不会被归进
+    「漂移（容差内）」；两侧都是 `0.000` 时 0/0 在 IEEE 下是 NaN，显式按比值 1 计，
+    照旧按计时量判。改的只是**理由**与**显示的行**：以前选不出 best，
+    理由写成「骨架相同但数值个数对不上」（假话）、显示的「实际」行是骨架桶的第一行
+    （不是命中的那行）；现在理由写成「一侧贴着时钟分辨率（正文 0.000 对实际 0.001），
+    比值无穷大；按计时量判，仍不一致」，显示的是**真正命中的那一行**。
+    自测见 `临时/ops_lab/test_inf_ratio.py`。
 
 用法（在仓库根目录下跑）：
     python 工具/教材自检/verify_measured.py            # 默认查 README 与 A-00..A-03
@@ -62,6 +71,7 @@
 import argparse
 import hashlib
 import json
+import math
 import os
 import re
 import subprocess
@@ -408,6 +418,14 @@ def numbers(s):
     return [float(x) for x in NUM.findall(norm_line(s))]
 
 
+def fmt_num(v):
+    """报理由时用的数值写法：0 写成 0.000（贴着时钟分辨率的行就长这样），
+    其余按三位小数写。符号照原样留着——报告里要能看出实际值是正是负。"""
+    if v == 0:
+        return "-0.000" if math.copysign(1.0, v) < 0 else "0.000"
+    return "%.3f" % v
+
+
 class Index:
     """所有程序输出行的索引：精确归一化行 + 骨架。"""
 
@@ -441,24 +459,54 @@ class Index:
                     if (numbers(c[0]) or [1e18])[0] == dn[0]]
             if same:
                 cands = same
-        best, best_worst = None, float("inf")
+        # 排序键是（无穷大的对数，最大比值）：**有穷的一律排在无穷大前面**，
+        # 有穷内部仍等价于「取比值最小的一行」（与改之前逐位相同）；
+        # 全是无穷大时取对数最少的一行，于是 best 不会是 None ——
+        # 报告里的「实际」行落在真正命中的那一行上，理由也能说真话
+        # （以前 best 为 None：理由写成「数值个数对不上」、显示的却是骨架桶第一行，两样都假）。
+        best, best_key = None, None
+        best_worst, best_n_inf, best_n_zero, best_nums = 1.0, 0, 0, []
         for raw, source, _ in cands:
             an = numbers(raw)
             if len(an) != len(dn):
                 continue
-            worst = 1.0
+            worst, n_inf, n_zero = 1.0, 0, 0
             for x, y in zip(dn, an):
                 lo, hi = min(abs(x), abs(y)), max(abs(x), abs(y))
-                r = (hi / lo) if lo > 0 else (float("inf") if hi > 0 else 1.0)
-                worst = max(worst, r)
-            if worst < best_worst:
-                best, best_worst = (raw, source), worst
+                if lo > 0:
+                    worst = max(worst, hi / lo)
+                elif hi > 0:
+                    n_inf += 1                  # 一侧贴着 0、另一侧非 0：比值无穷大
+                    worst = float("inf")
+                else:
+                    n_zero += 1                 # 两侧都是 0：0/0，显式按 1 计
+            key = (n_inf, worst)
+            if best_key is None or key < best_key:
+                best, best_key = (raw, source), key
+                best_worst, best_n_inf, best_n_zero, best_nums = worst, n_inf, n_zero, an
         if best is None:
             return ("MISMATCH", d, cands[0][0], "骨架相同但数值个数对不上")
         raw, source = best
+        if best_n_inf:
+            # 贴着时钟分辨率的那一对：比值是无穷大。**判定一个都不放宽**，
+            # 仍是 MISMATCH（无穷大不大于 5 倍容差），也不归到「漂移（容差内）」；
+            # 改的只是理由 —— 让人看懂为什么是 inf、为什么仍判不一致。
+            a, b = next((x, y) for x, y in zip(dn, best_nums)
+                        if min(abs(x), abs(y)) == 0 and max(abs(x), abs(y)) > 0)
+            return ("MISMATCH", d, raw,
+                    "一侧贴着时钟分辨率（正文 %s 对实际 %s），比值无穷大；"
+                    "按计时量判，仍不一致" % (fmt_num(a), fmt_num(b)))
+        if best_n_zero == len(dn):
+            # 两侧都是 0.000：0/0 在 IEEE 下是 NaN（NaN 与任何数比较都是假，
+            # 会让「取更接近的一行」整个失效），这里显式按比值 1 计；
+            # 判定与以前完全一样，只是理由说清楚。
+            note = ("两侧都贴着时钟分辨率（%s 对 %s），0/0 按比值 1 计"
+                    % (fmt_num(dn[0]), fmt_num(best_nums[0])))
+        else:
+            note = "最大比值 %.2fx" % best_worst
         if classify(doc_line) == "timing" and best_worst <= TOLERANCE:
-            return ("TIMING-DRIFT", d, raw, "最大比值 %.2fx" % best_worst)
-        return ("MISMATCH", d, raw, "最大比值 %.2fx（超容差）" % best_worst)
+            return ("TIMING-DRIFT", d, raw, note)
+        return ("MISMATCH", d, raw, note + "（超容差）")
 
 
 def main():
