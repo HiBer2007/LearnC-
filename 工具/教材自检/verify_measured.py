@@ -11,8 +11,8 @@
      计时量按数量级判，比值超过 5 倍才报 MISMATCH；
      正文块是节选时，只要每一行都能在某个程序的输出里找到就算过。
 
-四条新规矩（2026-10-02 加，原因见 README 的「已标节选的块不再报 PROBLEM」与
-「它查不出什么」）：
+新规矩（2026-10-02 四条，2026-10-03 加真板跳过与两种节选标注写法；原因见 README 的
+「已标节选的块不再报 PROBLEM」与「它查不出什么」）：
 
   - `AGENTS.local.md` 3.5 允许片段，前提是**明确标了节选**。标了的块跳过编译，
     在报告里单列 `[SKIP] 已标节选`，不再混进 `[PROBLEM]`；没标的照旧报 `[PROBLEM]`；
@@ -30,13 +30,27 @@
     逐行比对只会把它报成 `NOT-FOUND`——那既不是正文错，也不是程序错。
     护栏写在 `interval_line()` 里：判据是「**带「约」且形如区间的数值单元格**」，
     **不是**「这行有中文」「这行比较长」；把区间单元格挖掉之后行里还有别的数字的，
-    照旧逐行比对（**写错的具体值仍然报 `MISMATCH`**），没有「约」前缀的单次值也照旧。
+    照旧逐行比对（**写错的具体值仍然报 `MISMATCH`**），没有「约」前缀的单次值也照旧；
+  - **真板程序**（2026-10-03 加）：编译命令是交叉工具链 `arm-none-eabi-gcc` 的块，
+    输出要在 STM32F103C8 上经 semihosting 读回来。本机既没有这条工具链、也没有那块板子，
+    照「本机没有 WSL 就跳过并写明原因」那条路处理：程序块报
+    `[SKIP] …（需 ARM 交叉工具链与真板，本机跳过）`，它那几块输出（写着
+    `STM32F103C8`／`Cortex-M3`）也跳过逐行比对；两者都不算 `[PROBLEM]`、不算不一致。
+    判据只有两条：**块首部注释里的编译命令是那条交叉工具链**、
+    **输出块自己写着芯片型号或内核**——不是「提到 Cortex-M 就跳过」这类宽判据；
+  - **节选标注**多认两种写法（2026-10-03 加）：标注写在紧贴块上方／下方那一句正文里，
+    位置在行尾（`……（下面是节选，第 1905 至 1918 行）：`）或行首（`（上面是节选，第 1807 行。）……`）。
+    判据是**那句括号注本身**，别处散文里提一句节选位置对不上，照旧不算。
 
 用法（在仓库根目录下跑）：
     python 工具/教材自检/verify_measured.py            # 默认查 README 与 A-00..A-03
-    python 工具/教材自检/verify_measured.py --all09     # 查该板块全部 .md
+    python 工具/教材自检/verify_measured.py --all09     # 查 09 板块全部 .md
+    python 工具/教材自检/verify_measured.py --all08     # 查 08 板块全部 .md
+    python 工具/教材自检/verify_measured.py --board 08  # 同上，写成板块号
     python 工具/教材自检/verify_measured.py --fresh     # 忽略缓存，全部重跑
-报告写到 临时/ops_lab/verify_measured_report.txt（控制台只打印末尾摘要）。
+09 的报告写到 临时/ops_lab/verify_measured_report.txt（与以前一致），
+08 的写到 临时/ops_lab/verify_measured_report_08.txt（两份可以同时留着）；
+控制台只打印末尾摘要，08 那次连板块名与扫描量一起打。
 
 脚本查不出的（不是它没跑，是它看不见）：
   - 程序里硬编码的 printf：程序会照打，脚本无法判断那些数到底测没测过；
@@ -54,11 +68,18 @@ import subprocess
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+# 09 是原来那一条路、也是回归基线：板块目录与报告名与以前完全一致，一个字不动。
+# 两个自测脚本靠改 BOARD／REPORT 这两个全局量把自己指到临时目录，因此 09 这条路
+# 不在 main() 里重新赋值。
 BOARD = os.path.join(ROOT, "09-高阶数据结构")
 LAB = os.path.join(ROOT, "临时", "ops_lab")
 CACHE = os.path.join(LAB, "_verify_cache")
 WORK = os.path.join(LAB, "_verify_work")
 REPORT = os.path.join(LAB, "verify_measured_report.txt")
+# 08 是新加的入口（2026-10-03）：报告名带板块后缀，两次跑完两份报告都留着。
+# 自测脚本要把它指到临时目录时，替换下面这两个量即可。
+BOARD08 = os.path.join(ROOT, "08-一些散落的算法")
+REPORT08_NAME = "verify_measured_report_08.txt"
 
 DEFAULT_FILES = ["README.md",
                  "A-00-导读：数据结构是问题的形状.md",
@@ -80,7 +101,26 @@ TOLERANCE = 5.0
 
 LABEL_LINE = re.compile(r"^`[^`]+`$")                    # `C++`、`实测数据` 这类标签行
 EXCERPT_LINE = re.compile(r"^[（(].*节选.*[)）]$")         # 整行是一个带「节选」的括号注
+# 紧贴在块上／下方的正文里写的同一句括号注（2026-10-03 加）。05 章引 libstdc++ 头文件
+# 的那四段节选是这么标的：
+#   上一行**以**它结尾   ``第一步与第三步在 `__sort` 里（下面是节选，第 1905 至 1918 行）：``
+#   下一行**以**它开头   ``（上面是节选，第 1807 行。）基准从哪来由 `__unguarded…` 决定``
+# 判据是**这句括号注本身**（「（下面是节选」「（上面是节选」这几个字 + 位置在行首／行尾），
+# 不是「这行有中文」「块比较短」这类宽判据；别处散文里提一句节选（含 09 各章约定里
+# 那句「凡是节选都写明（下面是节选）」）位置对不上，照旧不算。
+EXCERPT_PHRASE = r"[（(](?:下面|上面)是节选[^）)]*[）)]"
+EXCERPT_TAIL = re.compile(EXCERPT_PHRASE + r"[：:。，,]?$")
+EXCERPT_HEAD = re.compile(r"^" + EXCERPT_PHRASE)
 LINUX_HINT = re.compile(r"-fsanitize=|（Linux|\(Linux|Linux 侧|linux 侧")
+# 真板程序（2026-10-03 加）：编译命令是交叉工具链 `arm-none-eabi-gcc`，
+# 输出要靠 semihosting 从 STM32F103C8 上读回来。本机既没有这条工具链，
+# 也没有那块板子——照「本机没有 WSL 就跳过并写明原因」那条路处理，归到 [SKIP]，
+# 不算 [PROBLEM]，也不算不一致。判据只有一条：块首部注释里的编译命令是那条交叉
+# 工具链（**不是**「这行提到 Cortex-M／STM32」这类宽判据）。
+ARM_CC = re.compile(r"\barm-none-eabi-(?:gcc|g\+\+)")
+# 真板输出块：输出自己写着芯片型号或内核，说明它来自那块板子（例如
+# ``pid_board: STM32F103C8 / Cortex-M3 / HSI 8 MHz``）。本机跑不了，跳过逐行比对。
+BOARD_OUT = re.compile(r"STM32F\d{3}|Cortex-M[0-9]|arm-none-eabi")
 
 # 区间写法（`AGENTS.local.md` 3.12 第三节第 2 步）：计时量漂到 5 倍容差以外时，
 # 正文把它改成**区间**，并写明这一行会随机器负载浮动。区间本来就不该出现在
@@ -103,16 +143,21 @@ def excerpt_mark(lines, fence, close, body):
     没标返回空串。
 
     `AGENTS.local.md` 3.5 允许片段，前提是**明确标出**。扫描全库统计下来，
-    实际写法有三种，位置不同但都算「已标」：
+    实际写法有五种，位置不同但都算「已标」：
 
       1. 块上方单独一行   `` （下面是节选：只给数据成员与不变式） ``
       2. 块下方单独一行   `` （上面是节选：完整程序在附录 A。） ``
       3. 块内首行（注释） `` /* （下面是节选）C23 的检查算术 */ ``、`` // 节选自 x.c 第 10 行 ``
+      4. 块上方那句正文**以**括号注结尾
+         `` 第一步与第三步在 `__sort` 里（下面是节选，第 1905 至 1918 行）： ``
+      5. 块下方那句正文**以**括号注开头
+         `` （上面是节选，第 1807 行。）基准从哪来由 `__unguarded_partition_pivot` 决定 ``
 
-    判据只认这三种写法，**不用「块短于 N 行就放过」这类长度判据**——
+    4、5 两种是 05 章引 libstdc++ 头文件时的写法：标注在，只是那句话前后还有别的字。
+    判据只认这五种写法，**不用「块短于 N 行就放过」这类长度判据**——
     那会把没标的真碎片一起漏掉。
     """
-    for step in range(4):                       # 1. 块上方
+    for step in range(4):                       # 1、4. 块上方
         k = fence - 1 - step
         if k < 0:
             break
@@ -123,8 +168,10 @@ def excerpt_mark(lines, fence, close, body):
             break
         if EXCERPT_LINE.match(s):
             return "块上方"
+        if EXCERPT_TAIL.search(s):
+            return "块上方（写在那一句正文末尾）"
         break
-    for step in range(4):                       # 2. 块下方
+    for step in range(4):                       # 2、5. 块下方
         k = close + 1 + step
         if k >= len(lines):
             break
@@ -133,6 +180,8 @@ def excerpt_mark(lines, fence, close, body):
             continue
         if EXCERPT_LINE.match(s):
             return "块下方"
+        if EXCERPT_HEAD.match(s):
+            return "块下方（写在那一句正文开头）"
         break
     for raw in body[:3]:                        # 3. 块内首行
         s = raw.strip()
@@ -219,9 +268,13 @@ def compile_commands(code):
     out = []
     for raw in head.split("\n"):
         line = raw.strip().lstrip("*").strip()
-        if not ("g++" in line or re.search(r"\bcl(\.exe)?\s+/", line)):
+        if not ("g++" in line or ARM_CC.search(line)
+                or re.search(r"\bcl(\.exe)?\s+/", line)):
             continue
         c = re.sub(r"^[^:：]*(?:编译|构建)[^:：]*[:：]\s*", "", line).strip()
+        if ARM_CC.search(c):
+            out.append(("arm", c))          # 交叉工具链：本机编不了，也跑不了
+            continue
         if re.search(r"\bcl(\.exe)?\s+/", c):
             out.append(("msvc", c))
             continue
@@ -409,13 +462,33 @@ class Index:
 
 
 def main():
+    global BOARD, REPORT
     ap = argparse.ArgumentParser()
-    ap.add_argument("--all09", action="store_true")
+    ap.add_argument("--all09", action="store_true",
+                    help="查 09-高阶数据结构 板块全部章节（原行为）")
+    ap.add_argument("--all08", action="store_true",
+                    help="查 08-一些散落的算法 板块全部章节")
+    ap.add_argument("--board", choices=("08", "09"),
+                    help="与 --all08／--all09 等价，写成板块号")
     ap.add_argument("--fresh", action="store_true")
     args = ap.parse_args()
 
+    if args.all08 and args.all09:
+        ap.error("--all08 与 --all09 只能给一个")
+    if args.board and args.all08 and args.board != "08":
+        ap.error("--board %s 与 --all08 冲突" % args.board)
+    if args.board and args.all09 and args.board != "09":
+        ap.error("--board %s 与 --all09 冲突" % args.board)
+    board = args.board or ("08" if args.all08 else "09")
+    scan_all = bool(args.board or args.all08 or args.all09)
+    if board == "08":
+        # 换板块：目录与报告名各自独立。09 那一条路不在这里重新赋值——
+        # 它的两个全局量就是原值（自测脚本也靠这一点把自己指到临时目录）。
+        BOARD = BOARD08
+        REPORT = os.path.join(LAB, REPORT08_NAME)
+
     ensure_dirs()
-    files = sorted(f for f in os.listdir(BOARD) if f.endswith(".md")) if args.all09 \
+    files = sorted(f for f in os.listdir(BOARD) if f.endswith(".md")) if scan_all \
         else DEFAULT_FILES
 
     programs, outputs = [], []
@@ -432,6 +505,7 @@ def main():
     index, fail_index = Index(), Index()
     problems, drifts = [], []
     n_excerpt, n_linux_skip, n_problem = 0, 0, 0
+    n_board, n_board_out = 0, 0
     for p in programs:
         name = program_name(p["code"])
         if p["excerpt"]:
@@ -442,6 +516,13 @@ def main():
             continue
         expected_fail = bool(INTENTIONAL_FAIL.search(p["code"].split("\n")[0]))
         cmds = compile_commands(p["code"])
+        if any(k == "arm" for k, _ in cmds):
+            # 真板程序：编译命令是交叉工具链，输出要从 STM32F103C8 上经 semihosting 读回。
+            # 本机没有这条工具链、也没有那块板子——跳过并写明原因，不报 PROBLEM。
+            n_board += 1
+            lines_out.append("[SKIP] %s:%d %s（需 ARM 交叉工具链与真板，本机跳过）"
+                             % (p["file"], p["line"], name))
+            continue
         gccs = [c for k, c in cmds if k == "gcc"] or ["-std=c++17 -O2"]
         if any(k == "msvc" for k, _ in cmds):
             lines_out.append("[跳过 MSVC 构建] %s:%d %s" % (p["file"], p["line"], name))
@@ -484,6 +565,13 @@ def main():
         # MSVC 侧的输出块：本机不复现 MSVC 构建，跳过（只报一句）
         if MSVC_BLOCK.search(o.get("context", "") + "\n" + o["code"][:200]):
             lines_out.append("  [跳过 MSVC 输出块] %s:%d" % (o["file"], o["line"]))
+            continue
+        # 真板程序的输出块：输出自己写着芯片型号或内核（`STM32F103C8`／`Cortex-M3`），
+        # 说明它来自那块板子。本机跑不了，跳过逐行比对，不报不一致。
+        if BOARD_OUT.search(o.get("context", "") + "\n" + o["code"][:200]):
+            n_board_out += 1
+            lines_out.append("  [SKIP] 真板输出块 %s:%d（需 ARM 交叉工具链与真板，"
+                             "本机跳过逐行比对）" % (o["file"], o["line"]))
             continue
         rows = []
         after_interval = False
@@ -556,15 +644,23 @@ def main():
                   "计时漂移（在容差内，仅供参考）：%d 处" % len(drifts),
                   "无名／编不过的块（PROBLEM）：%d 处" % n_problem,
                   "已标节选、跳过编译的块（SKIP）：%d 个" % n_excerpt,
-                  "需 Linux 侧工具链、本机跳过的块（SKIP）：%d 个" % n_linux_skip,
-                  "区间写法、跳过逐行比对的行（SKIP）：%d 行" % n_interval]
+                  "需 Linux 侧工具链、本机跳过的块（SKIP）：%d 个" % n_linux_skip]
+    if n_board or n_board_out:      # 两行只在 >0 时出现，09 的汇总因此一字未动
+        lines_out += ["需 ARM 交叉工具链与真板、本机跳过的程序块（SKIP）：%d 个" % n_board,
+                      "真板输出块、跳过逐行比对的（SKIP）：%d 个" % n_board_out]
+    lines_out.append("区间写法、跳过逐行比对的行（SKIP）：%d 行" % n_interval)
     with open(REPORT, "w", encoding="utf-8", newline="\n") as f:
         f.write("\n".join(lines_out) + "\n")
     tail_from = lines_out.index("== 汇总 ==") - 1
     if interval_rows:                      # 控制台也把新分类那几行打出来
         tail_from = min(tail_from, next(i for i, l in enumerate(lines_out)
                                         if l.startswith("== 区间写法")))
-    print("\n".join(lines_out[tail_from:]))
+    head = lines_out[1:3] if board != "09" else []   # 08：连板块名与扫描量一起打
+    try:                                   # 摘要里有编不出的字符时（管道/重定向下可能
+        sys.stdout.reconfigure(errors="replace")     # 落到 GBK），别让整次自检在最后一步崩掉
+    except (AttributeError, ValueError):
+        pass
+    print("\n".join(head + lines_out[tail_from:]))
     print("\n完整报告：%s" % REPORT)
     return 0
 
