@@ -77,7 +77,7 @@ const char *anti_windup_name(AntiWindup aw);
  *
  * 微分作用在量测上（对 y 求导再取负），不是作用在误差上：目标值一跳变，
  * 对误差求导会得到一个冲激，执行器会挨一记「微分冲击」。
- * derivative_alpha 是微分项的一阶低通系数，0 表示不过滤，见第 13.6 节。
+ * derivative_alpha 是微分项的一阶低通系数，0 表示不过滤，见第 6 节。
  */
 class PidController {
 public:
